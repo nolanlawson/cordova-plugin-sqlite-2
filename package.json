@@ -24,5 +24,12 @@
   "bugs": {
     "url": "https://github.com/nolanlawson/sqlite-plugin-2/issues"
   },
-  "homepage": "https://github.com/nolanlawson/sqlite-plugin-2#readme"
+  "homepage": "https://github.com/nolanlawson/sqlite-plugin-2#readme",
+  "dependencies": {
+    "websql": "^0.1.0"
+  },
+  "devDependencies": {
+    "browserify": "^13.0.0",
+    "bundle-collapser": "^1.2.1"
+  }
 }
