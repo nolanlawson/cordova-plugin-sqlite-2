@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plugin xmlns="http://apache.org/cordova/ns/plugins/1.0"
+        id="cordova-plugin-sqlite-2" version="0.1.0">
+    <name>Device</name>
+    <description>Cordova SQLite Plugin 2</description>
+    <license>Apache 2.0</license>
+    <keywords>cordova,sqlite,websql</keywords>
+    <js-module src="dist/sqlite-plugin.js" name="sqlitePlugin">
+        <clobbers target="sqlitePlugin"/>
+    </js-module>
+
+    <platform name="android">
+        <config-file target="config.xml" parent="/*">
+            <feature name="SQLite">
+                <param name="android-package" value="com.nolanlawson.cordova.sqlite"/>
+            </feature>
+        </config-file>
+
+        <source-file src="src/android/SQLitePlugin.java" target-dir="src/com/nolanlawson/cordova/sqlite" />
+    </platform>
+
+</plugin>

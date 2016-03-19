@@ -1,0 +1,28 @@
+{
+  "name": "sqlite-plugin-2",
+  "version": "0.1.0",
+  "description": "Cordova SQLite Plugin 2",
+  "cordova": {
+    "id": "cordova-plugin-sqlite-2",
+    "platforms": [
+      "android"
+    ]
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nolanlawson/sqlite-plugin-2.git"
+  },
+  "keywords": [
+    "cordova",
+    "sqlite",
+    "websql",
+    "ecosystem:cordova",
+    "cordova-android"
+  ],
+  "author": "Nolan Lawson <nolan@nolanlawson.com>",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/nolanlawson/sqlite-plugin-2/issues"
+  },
+  "homepage": "https://github.com/nolanlawson/sqlite-plugin-2#readme"
+}
