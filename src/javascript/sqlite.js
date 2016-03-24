@@ -1,5 +1,3 @@
-function SQLite() {
-}
 function Database(dbName) {
   this._dbName = dbName;
 }
@@ -40,7 +38,8 @@ Database.prototype.run = function run(sql, sqlArgs, callback) {
     [self._dbName, sql, sqlArgs]);
 };
 
-var sqlite = new SQLite();
-sqlite.Database = new Database();
+function SQLite() {
+}
+SQLite.prototype.Database = Database;
 
-export default sqlite;
+export default new SQLite();
