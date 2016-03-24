@@ -6,6 +6,7 @@ import android.database.sqlite.SQLiteStatement;
 import android.os.AsyncTask;
 import android.util.Log;
 
+import org.apache.cordova.CordovaInterface;
 import org.apache.cordova.CordovaPlugin;
 import org.apache.cordova.CallbackContext;
 
@@ -14,9 +15,13 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 public class SQLitePlugin extends CordovaPlugin {
+
+  private static final boolean DEBUG_MODE = true;
 
   private static final String TAG = SQLitePlugin.class.getSimpleName();
 
@@ -25,11 +30,15 @@ public class SQLitePlugin extends CordovaPlugin {
 
   private static final Object[][] EMPTY_RESULTS = new Object[][]{};
 
-  private static final Pattern PATTERN_INSERT = Pattern.compile("^\\s*INSERT", Pattern.CASE_INSENSITIVE);
+  private static final Pattern PATTERN_INSERT = Pattern.compile("^\\s*INSERT\\b", Pattern.CASE_INSENSITIVE);
+  private static final Pattern PATTERN_START_TXN = Pattern.compile("^\\s*BEGIN\\b", Pattern.CASE_INSENSITIVE);
+  private static final Pattern PATTERN_END_TXN = Pattern.compile("^\\s*END\\b", Pattern.CASE_INSENSITIVE);
+
+  private static final Map<String, SQLiteDatabase> DATABASES = new HashMap<String, SQLiteDatabase>();
 
   @Override
   public boolean execute(String action, JSONArray args, CallbackContext callbackContext) throws JSONException {
-    Log.d(TAG, "execute(" + action + ")");
+    debug("execute(%s)", action);
     if (action.equals(ACTION_RUN)) {
       this.run(args, callbackContext);
       return true;
@@ -76,56 +85,92 @@ public class SQLitePlugin extends CordovaPlugin {
         bindArgs[i] = jsonArray.getString(i);
       }
     }
-    SQLiteDatabase db = SQLiteDatabase.openOrCreateDatabase(dbName, null);
+    SQLiteDatabase db = getDatabase(dbName);
     if (actionType == ActionType.ALL) {
-      Cursor cursor = null;
-      try {
-        cursor = db.rawQuery(sql, bindArgs);
-        Object[][] rows = new Object[cursor.getCount()][];
-        for (int i = 0; cursor.moveToNext(); i++) {
-          int numColumns = cursor.getColumnCount();
-          Object[] columns = new Object[numColumns];
-          for (int j = 0; j < numColumns; j++) {
-            Object value = null;
-            switch (cursor.getType(j)) {
-              case Cursor.FIELD_TYPE_FLOAT:
-                value = cursor.getFloat(j);
-                break;
-              case Cursor.FIELD_TYPE_INTEGER:
-                value = cursor.getInt(j);
-                break;
-              case Cursor.FIELD_TYPE_BLOB:
-                // convert byte[] to binary string; it's good enough, because
-                // WebSQL doesn't support blobs anyway
-                value = new String(cursor.getBlob(j));
-                break;
-              case Cursor.FIELD_TYPE_STRING:
-                value = cursor.getString(j);
-                break;
-            }
-            columns[j] = value;
-          }
-          rows[i] = columns;
-        }
-        Log.d(TAG, "sql: " + sql);
-        Log.d(TAG, "rows: " + Arrays.toString(rows));
-        return new PluginResult(rows, 0, 0, null);
-      } finally {
-        if (cursor != null) {
-          cursor.close();
-        }
-      }
+      return doAllTypeInBackgroundAndPossiblyThrow(sql, bindArgs, db);
+    } else { // "run"
+      return doRunTypeInBackgroundAndPossiblyThrow(sql, bindArgs, db);
+    }
+  }
 
+  // do a "run" operation
+  private PluginResult doRunTypeInBackgroundAndPossiblyThrow(String sql, String[] bindArgs, SQLiteDatabase db) {
+    debug("\"run\" query: %s", sql);
+    // TODO: close statement, do conditionally
+    SQLiteStatement statement = db.compileStatement(sql);
+    debug("compiled statement");
+    if (bindArgs != null) {
+      statement.bindAllArgsAsStrings(bindArgs);
+    }
+    debug("bound args");
+    if (PATTERN_INSERT.matcher(sql).find()) {
+      debug("type: insert");
+      long insertId = statement.executeInsert();
+      return new PluginResult(EMPTY_RESULTS, 0, insertId, null);
+    } else if (PATTERN_START_TXN.matcher(sql).find()) {
+      debug("type: begin txn");
+      db.beginTransaction();
+      return new PluginResult(EMPTY_RESULTS, 0, 0, null);
+    } else if (PATTERN_END_TXN.matcher(sql).find()) {
+      debug("type: end txn");
+      db.setTransactionSuccessful();
+      db.endTransaction();
+      return new PluginResult(EMPTY_RESULTS, 0, 0, null);
     } else {
-      SQLiteStatement statement = db.compileStatement(sql);
-      if (PATTERN_INSERT.matcher(sql).find()) {
-        long insertId = statement.executeInsert();
-        return new PluginResult(EMPTY_RESULTS, 0, insertId, null);
-      } else {
-        int rowsAffected = statement.executeUpdateDelete();
-        return new PluginResult(EMPTY_RESULTS, rowsAffected, 0, null);
+      debug("type: update/delete/etc.");
+      int rowsAffected = statement.executeUpdateDelete();
+      return new PluginResult(EMPTY_RESULTS, rowsAffected, 0, null);
+    }
+  }
+
+  // do an "all" operation
+  private PluginResult doAllTypeInBackgroundAndPossiblyThrow(String sql, String[] bindArgs, SQLiteDatabase db) {
+    debug("\"all\" query: %s", sql);
+    Cursor cursor = null;
+    try {
+      cursor = db.rawQuery(sql, bindArgs);
+      Object[][] rows = new Object[cursor.getCount()][];
+      for (int i = 0; cursor.moveToNext(); i++) {
+        int numColumns = cursor.getColumnCount();
+        Object[] columns = new Object[numColumns];
+        for (int j = 0; j < numColumns; j++) {
+          Object value = null;
+          switch (cursor.getType(j)) {
+            case Cursor.FIELD_TYPE_FLOAT:
+              value = cursor.getFloat(j);
+              break;
+            case Cursor.FIELD_TYPE_INTEGER:
+              value = cursor.getInt(j);
+              break;
+            case Cursor.FIELD_TYPE_BLOB:
+              // convert byte[] to binary string; it's good enough, because
+              // WebSQL doesn't support blobs anyway
+              value = new String(cursor.getBlob(j));
+              break;
+            case Cursor.FIELD_TYPE_STRING:
+              value = cursor.getString(j);
+              break;
+          }
+          columns[j] = value;
+        }
+        rows[i] = columns;
+      }
+      debug("sql: %s", sql);
+      return new PluginResult(rows, 0, 0, null);
+    } finally {
+      if (cursor != null) {
+        cursor.close();
       }
     }
+  }
+
+  private SQLiteDatabase getDatabase(String name) {
+    SQLiteDatabase database = DATABASES.get(name);
+    if (database == null) {
+      database = SQLiteDatabase.openOrCreateDatabase(name, null);
+      DATABASES.put(name, database);
+    }
+    return database;
   }
 
   private class BackgroundTask extends AsyncTask<Void, Void, Void> {
@@ -141,13 +186,19 @@ public class SQLitePlugin extends CordovaPlugin {
       PluginResult pluginResult = runInBackground(this.backgroundTaskArgs);
 
       if (pluginResult.error != null) {
+        pluginResult.error.printStackTrace();
         this.backgroundTaskArgs.callbackContext.error(pluginResult.error.toString());
       } else {
         this.backgroundTaskArgs.callbackContext.success(pluginResultToJson(pluginResult));
       }
       return null;
     }
+  }
 
+  private static void debug(String line, Object... format) {
+    if (DEBUG_MODE) {
+      Log.d(TAG, String.format(line, format));
+    }
   }
 
   private static JSONObject pluginResultToJson(PluginResult result) {
@@ -167,7 +218,7 @@ public class SQLitePlugin extends CordovaPlugin {
         rowsJsonArray.put(columnsJsonArray);
       }
       jsonObject.put("rows", rowsJsonArray);
-      Log.d(TAG, "jsonObject: " + jsonObject.toString());
+      debug("jsonObject: %s", jsonObject);
 
       return jsonObject;
     } catch (JSONException e) {
