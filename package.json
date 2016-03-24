@@ -3,7 +3,8 @@
   "version": "0.1.0",
   "description": "Cordova SQLite Plugin 2",
   "scripts": {
-    "build": "rimraf dist && mkdirp dist && rollup src/javascript/index.js --format iife --name sqlitePlugin > dist/sqlite-plugin.js"
+    "build": "rimraf dist && mkdirp dist && browserify -t rollupify -s sqlitePlugin src/javascript/index.js > dist/sqlite-plugin.js",
+    "test": "bash ./bin/test.sh"
   },
   "cordova": {
     "id": "cordova-plugin-sqlite-2",
@@ -28,9 +29,10 @@
   "devDependencies": {
     "browserify": "^13.0.0",
     "bundle-collapser": "^1.2.1",
+    "cordova": "^6.1.0",
     "mkdirp": "^0.5.1",
     "rimraf": "^2.5.2",
-    "rollup": "^0.25.6",
+    "rollupify": "^0.2.0",
     "websql": "^0.1.0"
   }
 }
