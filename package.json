@@ -25,14 +25,12 @@
     "url": "https://github.com/nolanlawson/sqlite-plugin-2/issues"
   },
   "homepage": "https://github.com/nolanlawson/sqlite-plugin-2#readme",
-  "dependencies": {
-    "websql": "^0.1.0"
-  },
   "devDependencies": {
     "browserify": "^13.0.0",
     "bundle-collapser": "^1.2.1",
     "mkdirp": "^0.5.1",
     "rimraf": "^2.5.2",
-    "rollup": "^0.25.6"
+    "rollup": "^0.25.6",
+    "websql": "^0.1.0"
   }
 }
