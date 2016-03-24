@@ -3,3 +3,9 @@ dist
 npm-debug.log
 test/plugins
 test/platforms
+test/www/hljs-monokai.css
+test/www/test-bundle.js
+test/www/test-bundle.map.json
+test/www/zuul-client.js
+test/www/zuul-framework.js
+test/www/zuul.css

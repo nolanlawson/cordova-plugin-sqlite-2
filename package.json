@@ -27,12 +27,15 @@
   },
   "homepage": "https://github.com/nolanlawson/sqlite-plugin-2#readme",
   "devDependencies": {
+    "bluebird": "^3.3.4",
     "browserify": "^13.0.0",
     "bundle-collapser": "^1.2.1",
     "cordova": "^6.1.0",
     "mkdirp": "^0.5.1",
+    "replace": "^0.3.0",
     "rimraf": "^2.5.2",
     "rollupify": "^0.2.0",
-    "websql": "^0.1.0"
+    "websql": "^0.1.0",
+    "zuul": "^3.10.1"
   }
 }

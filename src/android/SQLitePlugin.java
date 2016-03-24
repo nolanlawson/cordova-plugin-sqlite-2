@@ -128,13 +128,4 @@ public class SQLitePlugin extends CordovaPlugin {
     }
   }
 
-  private static class SqlArgs {
-    public final String sql;
-    public final Object[] bindArgs;
-
-    public SqlArgs(String sql, Object[] bindArgs) {
-      this.sql = sql;
-      this.bindArgs = bindArgs;
-    }
-  }
 }
