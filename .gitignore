@@ -9,3 +9,4 @@ test/www/test-bundle.map.json
 test/www/zuul-client.js
 test/www/zuul-framework.js
 test/www/zuul.css
+debug_android

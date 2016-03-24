@@ -1,41 +1,34 @@
+function massageError(err) {
+  return typeof err === 'string' ? new Error(err) : err;
+}
+
 function Database(dbName) {
   this._dbName = dbName;
 }
 
-Database.prototype.all = function all(sql, sqlArgs, callback) {
-  var self = this;
+Database.prototype._exec = function exec(type, sql, sqlArgs, callback) {
 
-  function onSuccess(winParam) {
-    callback(null, winParam);
+  function onSuccess(successResult) {
+    callback(null, successResult);
   }
 
-  function onError(error) {
-    callback(error);
+  function onError(err) {
+    callback(massageError(err));
   }
 
   cordova.exec(onSuccess,
     onError,
     "SQLitePlugin",
-    "all",
-    [self._dbName, sql, sqlArgs]);
+    type,
+    [this._dbName, sql, sqlArgs]);
+};
+
+Database.prototype.all = function all(sql, sqlArgs, callback) {
+  this._exec('all', sql, sqlArgs, callback);
 };
 
 Database.prototype.run = function run(sql, sqlArgs, callback) {
-  var self = this;
-
-  function onSuccess(winParam) {
-    callback(null, winParam);
-  }
-
-  function onError(error) {
-    callback(error);
-  }
-
-  cordova.exec(onSuccess,
-    onError,
-    "SQLitePlugin",
-    "run",
-    [self._dbName, sql, sqlArgs]);
+  this._exec('run', sql, sqlArgs, callback);
 };
 
 function SQLite() {
