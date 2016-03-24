@@ -2,16 +2,16 @@
   "name": "sqlite-plugin-2",
   "version": "0.1.0",
   "description": "Cordova SQLite Plugin 2",
+  "scripts": {
+    "build": "rimraf dist && mkdirp dist && rollup src/javascript/index.js --format iife --name sqlitePlugin > dist/sqlite-plugin.js"
+  },
   "cordova": {
     "id": "cordova-plugin-sqlite-2",
     "platforms": [
       "android"
     ]
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/nolanlawson/sqlite-plugin-2.git"
-  },
+  "repository": "https://github.com/nolanlawson/sqlite-plugin-2.git",
   "keywords": [
     "cordova",
     "sqlite",
@@ -30,6 +30,9 @@
   },
   "devDependencies": {
     "browserify": "^13.0.0",
-    "bundle-collapser": "^1.2.1"
+    "bundle-collapser": "^1.2.1",
+    "mkdirp": "^0.5.1",
+    "rimraf": "^2.5.2",
+    "rollup": "^0.25.6"
   }
 }
