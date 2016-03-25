@@ -1,5 +1,6 @@
 package com.nolanlawson.cordova.sqlite;
 
+import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteStatement;
@@ -12,6 +13,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Executor;
@@ -129,7 +131,8 @@ public class SQLitePlugin extends CordovaPlugin {
         if (PATTERN_INSERT.matcher(sql).find()) {
           debug("type: insert");
           long insertId = statement.executeInsert();
-          return new PluginResult(EMPTY_ROWS, EMPTY_COLUMNS, 0, insertId, null);
+          int rowsAffected = insertId >= 0 ? 1 : 0;
+          return new PluginResult(EMPTY_ROWS, EMPTY_COLUMNS, rowsAffected, insertId, null);
         } else {
           debug("type: update/delete/etc.");
           int rowsAffected = statement.executeUpdateDelete();
@@ -194,7 +197,12 @@ public class SQLitePlugin extends CordovaPlugin {
     debug("getDatabase(%s), my thread is %s", name, Thread.currentThread().getName());
     SQLiteDatabase database = DATABASES.get(name);
     if (database == null) {
-      database = SQLiteDatabase.openOrCreateDatabase(name, null);
+      if (":memory:".equals(name)) {
+        database = SQLiteDatabase.openOrCreateDatabase(name, null);
+      } else {
+        File file = new File(cordova.getActivity().getFilesDir(), name);
+        database = SQLiteDatabase.openOrCreateDatabase(file, null);
+      }
       DATABASES.put(name, database);
     }
     return database;
