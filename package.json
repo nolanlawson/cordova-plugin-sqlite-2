@@ -34,6 +34,7 @@
     "lodash.map": "^4.2.1",
     "lodash.zipobject": "^4.1.2",
     "mkdirp": "^0.5.1",
+    "pouchdb": "^5.3.1",
     "replace": "^0.3.0",
     "rimraf": "^2.5.2",
     "rollupify": "^0.2.0",
