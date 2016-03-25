@@ -6,17 +6,19 @@ import android.database.sqlite.SQLiteStatement;
 import android.os.AsyncTask;
 import android.util.Log;
 
-import org.apache.cordova.CordovaInterface;
-import org.apache.cordova.CordovaPlugin;
 import org.apache.cordova.CallbackContext;
-
+import org.apache.cordova.CordovaPlugin;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Executor;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
 public class SQLitePlugin extends CordovaPlugin {
@@ -28,13 +30,23 @@ public class SQLitePlugin extends CordovaPlugin {
   private static final String ACTION_RUN = "run";
   private static final String ACTION_ALL = "all";
 
-  private static final Object[][] EMPTY_RESULTS = new Object[][]{};
+  private static final Object[][] EMPTY_ROWS = new Object[][]{};
+  private static final String[] EMPTY_COLUMNS = new String[]{};
 
   private static final Pattern PATTERN_INSERT = Pattern.compile("^\\s*INSERT\\b", Pattern.CASE_INSENSITIVE);
   private static final Pattern PATTERN_START_TXN = Pattern.compile("^\\s*BEGIN\\b", Pattern.CASE_INSENSITIVE);
   private static final Pattern PATTERN_END_TXN = Pattern.compile("^\\s*END\\b", Pattern.CASE_INSENSITIVE);
 
   private static final Map<String, SQLiteDatabase> DATABASES = new HashMap<String, SQLiteDatabase>();
+
+  private static final ThreadFactory threadFactory = new ThreadFactory() {
+    public Thread newThread(Runnable r) {
+      return new Thread(r, "SQLitePlugin BG Thread");
+    }
+  };
+  private static final Executor SINGLE_EXECUTOR = new ThreadPoolExecutor(
+      1, 1, 1,
+      TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(), threadFactory);
 
   @Override
   public boolean execute(String action, JSONArray args, CallbackContext callbackContext) throws JSONException {
@@ -52,20 +64,20 @@ public class SQLitePlugin extends CordovaPlugin {
   private void run(JSONArray args, CallbackContext context) {
     BackgroundTaskArgs backgroundTaskArgs = new BackgroundTaskArgs(ActionType.RUN, args, context);
     new BackgroundTask(backgroundTaskArgs)
-        .executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+        .executeOnExecutor(SINGLE_EXECUTOR);
   }
 
   private void all(JSONArray args, CallbackContext context) {
     BackgroundTaskArgs backgroundTaskArgs = new BackgroundTaskArgs(ActionType.ALL, args, context);
     new BackgroundTask(backgroundTaskArgs)
-        .executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+        .executeOnExecutor(SINGLE_EXECUTOR);
   }
 
   private PluginResult runInBackground(BackgroundTaskArgs backgroundTaskArgs) {
     try {
       return runInBackgroundAndPossiblyThrow(backgroundTaskArgs);
     } catch (Throwable e) {
-      return new PluginResult(EMPTY_RESULTS, 0, 0, e);
+      return new PluginResult(EMPTY_ROWS, EMPTY_COLUMNS, 0, 0, e);
     }
   }
 
@@ -99,12 +111,12 @@ public class SQLitePlugin extends CordovaPlugin {
     if (PATTERN_START_TXN.matcher(sql).find()) {
       debug("type: begin txn");
       db.beginTransaction();
-      return new PluginResult(EMPTY_RESULTS, 0, 0, null);
+      return new PluginResult(EMPTY_ROWS, EMPTY_COLUMNS, 0, 0, null);
     } else if (PATTERN_END_TXN.matcher(sql).find()) {
       debug("type: end txn");
       db.setTransactionSuccessful();
       db.endTransaction();
-      return new PluginResult(EMPTY_RESULTS, 0, 0, null);
+      return new PluginResult(EMPTY_ROWS, EMPTY_COLUMNS, 0, 0, null);
     } else {
       SQLiteStatement statement = null;
       try {
@@ -117,11 +129,11 @@ public class SQLitePlugin extends CordovaPlugin {
         if (PATTERN_INSERT.matcher(sql).find()) {
           debug("type: insert");
           long insertId = statement.executeInsert();
-          return new PluginResult(EMPTY_RESULTS, 0, insertId, null);
+          return new PluginResult(EMPTY_ROWS, EMPTY_COLUMNS, 0, insertId, null);
         } else {
           debug("type: update/delete/etc.");
           int rowsAffected = statement.executeUpdateDelete();
-          return new PluginResult(EMPTY_RESULTS, rowsAffected, 0, null);
+          return new PluginResult(EMPTY_ROWS, EMPTY_COLUMNS, rowsAffected, 0, null);
         }
       } finally {
         if (statement != null) {
@@ -136,7 +148,13 @@ public class SQLitePlugin extends CordovaPlugin {
     debug("\"all\" query: %s", sql);
     Cursor cursor = null;
     try {
+      debug("about to do rawQuery()");
       cursor = db.rawQuery(sql, bindArgs);
+      debug("did rawQuery()");
+      String[] columnNames = new String[cursor.getColumnCount()];
+      for (int i = 0; i < columnNames.length; i++) {
+        columnNames[i] = cursor.getColumnName(i);
+      }
       Object[][] rows = new Object[cursor.getCount()][];
       for (int i = 0; cursor.moveToNext(); i++) {
         int numColumns = cursor.getColumnCount();
@@ -163,8 +181,8 @@ public class SQLitePlugin extends CordovaPlugin {
         }
         rows[i] = columns;
       }
-      debug("sql: %s", sql);
-      return new PluginResult(rows, 0, 0, null);
+      debug("returning %d rows", rows.length);
+      return new PluginResult(rows, columnNames, 0, 0, null);
     } finally {
       if (cursor != null) {
         cursor.close();
@@ -173,6 +191,7 @@ public class SQLitePlugin extends CordovaPlugin {
   }
 
   private SQLiteDatabase getDatabase(String name) {
+    debug("getDatabase(%s), my thread is %s", name, Thread.currentThread().getName());
     SQLiteDatabase database = DATABASES.get(name);
     if (database == null) {
       database = SQLiteDatabase.openOrCreateDatabase(name, null);
@@ -191,6 +210,7 @@ public class SQLitePlugin extends CordovaPlugin {
 
     @Override
     protected Void doInBackground(Void... params) {
+      debug("my thread is: %s", Thread.currentThread().getName());
       PluginResult pluginResult = runInBackground(this.backgroundTaskArgs);
 
       if (pluginResult.error != null) {
@@ -216,6 +236,12 @@ public class SQLitePlugin extends CordovaPlugin {
       jsonObject.put("insertId", result.insertId);
       jsonObject.put("rowsAffected", result.rowsAffected);
 
+      JSONArray columnNamesJsonArray = new JSONArray();
+      for (int i = 0; i < result.columns.length; i++) {
+        columnNamesJsonArray.put(result.columns[i]);
+      }
+      jsonObject.put("columns", columnNamesJsonArray);
+
       JSONArray rowsJsonArray = new JSONArray();
       for (int i = 0; i < result.rows.length; i++) {
         Object[] columns = result.rows[i];
@@ -236,12 +262,15 @@ public class SQLitePlugin extends CordovaPlugin {
 
   private static class PluginResult {
     public final Object[][] rows;
+    public final String[] columns;
     public final int rowsAffected;
     public final long insertId;
     public final Throwable error;
 
-    public PluginResult(Object[][] rows, int rowsAffected, long insertId, Throwable error) {
+    public PluginResult(Object[][] rows, String[] columns,
+                        int rowsAffected, long insertId, Throwable error) {
       this.rows = rows;
+      this.columns = columns;
       this.rowsAffected = rowsAffected;
       this.insertId = insertId;
       this.error = error;
