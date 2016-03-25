@@ -96,18 +96,7 @@ public class SQLitePlugin extends CordovaPlugin {
   // do a "run" operation
   private PluginResult doRunTypeInBackgroundAndPossiblyThrow(String sql, String[] bindArgs, SQLiteDatabase db) {
     debug("\"run\" query: %s", sql);
-    // TODO: close statement, do conditionally
-    SQLiteStatement statement = db.compileStatement(sql);
-    debug("compiled statement");
-    if (bindArgs != null) {
-      statement.bindAllArgsAsStrings(bindArgs);
-    }
-    debug("bound args");
-    if (PATTERN_INSERT.matcher(sql).find()) {
-      debug("type: insert");
-      long insertId = statement.executeInsert();
-      return new PluginResult(EMPTY_RESULTS, 0, insertId, null);
-    } else if (PATTERN_START_TXN.matcher(sql).find()) {
+    if (PATTERN_START_TXN.matcher(sql).find()) {
       debug("type: begin txn");
       db.beginTransaction();
       return new PluginResult(EMPTY_RESULTS, 0, 0, null);
@@ -117,9 +106,28 @@ public class SQLitePlugin extends CordovaPlugin {
       db.endTransaction();
       return new PluginResult(EMPTY_RESULTS, 0, 0, null);
     } else {
-      debug("type: update/delete/etc.");
-      int rowsAffected = statement.executeUpdateDelete();
-      return new PluginResult(EMPTY_RESULTS, rowsAffected, 0, null);
+      SQLiteStatement statement = null;
+      try {
+        statement = db.compileStatement(sql);
+        debug("compiled statement");
+        if (bindArgs != null) {
+          statement.bindAllArgsAsStrings(bindArgs);
+        }
+        debug("bound args");
+        if (PATTERN_INSERT.matcher(sql).find()) {
+          debug("type: insert");
+          long insertId = statement.executeInsert();
+          return new PluginResult(EMPTY_RESULTS, 0, insertId, null);
+        } else {
+          debug("type: update/delete/etc.");
+          int rowsAffected = statement.executeUpdateDelete();
+          return new PluginResult(EMPTY_RESULTS, rowsAffected, 0, null);
+        }
+      } finally {
+        if (statement != null) {
+          statement.close();
+        }
+      }
     }
   }
 
