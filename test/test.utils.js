@@ -114,7 +114,7 @@ testUtils.atob = function (arg) {
 };
 
 testUtils.readBlob = function (blob, callback) {
-  if (typeof module !== 'undefined' && module.exports) {
+  if (typeof process !== 'undefined' && !process.browser) {
     callback(blob.toString('binary'));
   } else {
     var reader = new FileReader();

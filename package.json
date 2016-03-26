@@ -4,7 +4,9 @@
   "description": "Cordova SQLite Plugin 2",
   "scripts": {
     "build": "rimraf dist && mkdirp dist && browserify -t rollupify -s sqlitePlugin src/javascript/index.js > dist/sqlite-plugin.js",
-    "test": "bash ./bin/test.sh"
+    "test": "bash ./bin/test.sh",
+    "test-local": "zuul --ui mocha-bdd --local 9000 --no-coverage test/test.js",
+    "test-phantom": "zuul --ui mocha-bdd --phantom --no-coverage test/test.js"
   },
   "cordova": {
     "id": "cordova-plugin-sqlite-2",
