@@ -12,12 +12,16 @@ function Database(dbName) {
 Database.prototype._exec = function exec(type, sql, sqlArgs, callback) {
 
   function onSuccess(successResult) {
+    var insertId = successResult[0];
+    var rowsAffected = successResult[1];
+    var returnedColumns = successResult[2];
+    var returnedRows = successResult[3];
     var executionResult = {
-      lastID: successResult.insertId,
-      changes: successResult.rowsAffected
+      lastID: insertId,
+      changes: rowsAffected
     };
-    var rows = map(successResult.rows, function (rawRow) {
-      return zipObject(successResult.columns, rawRow);
+    var rows = map(returnedRows, function (rawRow) {
+      return zipObject(returnedColumns, rawRow);
     });
     callback.call(executionResult, null, rows);
   }

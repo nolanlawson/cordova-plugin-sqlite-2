@@ -40,7 +40,7 @@ adapters.forEach(function (adapter) {
       });
     });
 
-    it('#2913 massively parallel compaction', function () {
+    it.skip('#2913 massively parallel compaction', function () {
       var db = new PouchDB(dbs.name);
       var tasks = [];
       for (var i = 0; i < 30; i++) {
@@ -1445,7 +1445,7 @@ adapters.forEach(function (adapter) {
       });
     });
 
-    it('#3251 massively parallel autocompaction while getting', function () {
+    it.skip('#3251 massively parallel autocompaction while getting', function () {
       var db = new PouchDB(dbs.name, {auto_compaction: true});
 
       var doc = {_id: 'foo'};
@@ -1484,7 +1484,7 @@ adapters.forEach(function (adapter) {
       });
     });
 
-    it('#3251 massively parallel autocompaction while allDocsing', function () {
+    it.skip('#3251 massively parallel autocompaction while allDocsing', function () {
       var db = new PouchDB(dbs.name, {auto_compaction: true});
 
       var doc = {_id: 'foo'};
@@ -1523,7 +1523,7 @@ adapters.forEach(function (adapter) {
       });
     });
 
-    it('#3251 massively parallel autocompaction while changesing', function () {
+    it.skip('#3251 massively parallel autocompaction while changesing', function () {
       var db = new PouchDB(dbs.name, {auto_compaction: true});
 
       var doc = {_id: 'foo'};

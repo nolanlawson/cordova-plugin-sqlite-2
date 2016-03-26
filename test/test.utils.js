@@ -234,9 +234,7 @@ testUtils.putTree = function (db, tree, callback) {
 };
 
 testUtils.isCouchDB = function (cb) {
-  PouchDB.ajax({url: testUtils.couchHost() + '/' }, function (err, res) {
-    cb('couchdb' in res);
-  });
+  cb(null, false);
 };
 
 testUtils.writeDocs = function (db, docs, callback, res) {

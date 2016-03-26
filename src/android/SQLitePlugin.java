@@ -25,7 +25,7 @@ import java.util.regex.Pattern;
 
 public class SQLitePlugin extends CordovaPlugin {
 
-  private static final boolean DEBUG_MODE = true;
+  private static final boolean DEBUG_MODE = false;
 
   private static final String TAG = SQLitePlugin.class.getSimpleName();
 
@@ -237,35 +237,28 @@ public class SQLitePlugin extends CordovaPlugin {
     }
   }
 
-  private static JSONObject pluginResultToJson(PluginResult result) {
-    try {
-      JSONObject jsonObject = new JSONObject();
-
-      jsonObject.put("insertId", result.insertId);
-      jsonObject.put("rowsAffected", result.rowsAffected);
-
-      JSONArray columnNamesJsonArray = new JSONArray();
-      for (int i = 0; i < result.columns.length; i++) {
-        columnNamesJsonArray.put(result.columns[i]);
-      }
-      jsonObject.put("columns", columnNamesJsonArray);
-
-      JSONArray rowsJsonArray = new JSONArray();
-      for (int i = 0; i < result.rows.length; i++) {
-        Object[] columns = result.rows[i];
-        JSONArray columnsJsonArray = new JSONArray();
-        for (int j = 0; j < columns.length; j++) {
-          columnsJsonArray.put(columns[j]);
-        }
-        rowsJsonArray.put(columnsJsonArray);
-      }
-      jsonObject.put("rows", rowsJsonArray);
-      debug("jsonObject: %s", jsonObject);
-
-      return jsonObject;
-    } catch (JSONException e) {
-      throw new RuntimeException(e); // should never happen
+  private static JSONArray pluginResultToJson(PluginResult result) {
+    JSONArray columnNamesJsonArray = new JSONArray();
+    for (int i = 0; i < result.columns.length; i++) {
+      columnNamesJsonArray.put(result.columns[i]);
     }
+
+    JSONArray rowsJsonArray = new JSONArray();
+    for (int i = 0; i < result.rows.length; i++) {
+      Object[] columns = result.rows[i];
+      JSONArray columnsJsonArray = new JSONArray();
+      for (int j = 0; j < columns.length; j++) {
+        columnsJsonArray.put(columns[j]);
+      }
+      rowsJsonArray.put(columnsJsonArray);
+    }
+    JSONArray jsonResult = new JSONArray();
+    jsonResult.put(result.insertId);
+    jsonResult.put(result.rowsAffected);
+    jsonResult.put(columnNamesJsonArray);
+    jsonResult.put(rowsJsonArray);
+    debug("returning json: %s", jsonResult);
+    return jsonResult;
   }
 
   private static class PluginResult {
