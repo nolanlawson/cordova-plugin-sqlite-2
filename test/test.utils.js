@@ -29,7 +29,7 @@ testUtils.isExpressRouter = function () {
 };
 
 testUtils.params = function () {
-  if (typeof module !== 'undefined' && module.exports) {
+  if (typeof process !== 'undefined' && !process.browser) {
     return process.env;
   }
   var paramStr = document.location.search.slice(1);
@@ -92,7 +92,7 @@ function createBlob(parts, properties) {
 }
 
 testUtils.makeBlob = function (data, type) {
-  if (typeof module !== 'undefined' && module.exports) {
+  if (typeof process !== 'undefined' && !process.browser) {
     return new Buffer(data, 'binary');
   } else {
     return createBlob([data], {
@@ -141,7 +141,7 @@ testUtils.readBlobPromise = function (blob) {
 };
 
 testUtils.base64Blob = function (blob, callback) {
-  if (typeof module !== 'undefined' && module.exports) {
+  if (typeof process !== 'undefined' && !process.browser) {
     callback(blob.toString('base64'));
   } else {
     testUtils.readBlob(blob, function (binary) {

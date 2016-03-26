@@ -3112,15 +3112,7 @@ adapters.forEach(function (adapter) {
       it('putAttachment and getAttachment with big png data', function (done) {
 
         function getData(cb) {
-          var script = document.createElement('script');
-          script.src = 'bigimage.js';
-          document.body.appendChild(script);
-          var timeout = setInterval(function () {
-            if (window.bigimage) {
-              clearInterval(timeout);
-              cb(null, window.bigimage);
-            }
-          }, 500);
+          cb(null, require('./bigimage'));
         }
 
         var db = new PouchDB(dbs.name);
