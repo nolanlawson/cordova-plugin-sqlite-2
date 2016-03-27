@@ -7,7 +7,7 @@
 #import "sqlite3.h"
 
 // Set this to 0 when publishing
-#define DEBUG_MODE = 1;
+#define DEBUG_MODE = 0;
 
 #ifdef DEBUG_MODE
 #   define NSLog(...) NSLog(__VA_ARGS__)
