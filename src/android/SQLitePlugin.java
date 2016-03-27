@@ -23,6 +23,10 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
+/**
+  * Author: Nolan Lawson
+  * License: Apache 2
+  */
 public class SQLitePlugin extends CordovaPlugin {
 
   private static final boolean DEBUG_MODE = false;
