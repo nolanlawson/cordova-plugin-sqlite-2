@@ -1,12 +1,14 @@
 {
-  "name": "sqlite-plugin-2",
+  "name": "cordova-sqlite-plugin-2",
   "version": "0.1.0",
   "description": "Cordova SQLite Plugin 2",
   "scripts": {
+    "appium": "appium",
     "build": "rimraf dist && mkdirp dist && browserify -t rollupify -s sqlitePlugin src/javascript/index.js > dist/sqlite-plugin.js",
     "test": "bash ./bin/test.sh",
     "test-local": "zuul --ui mocha-bdd --local 9000 --no-coverage test/test.js",
-    "test-phantom": "zuul --ui mocha-bdd --phantom --no-coverage test/test.js"
+    "test-phantom": "zuul --ui mocha-bdd --phantom --no-coverage test/test.js",
+    "prepublish": "npm run build"
   },
   "cordova": {
     "id": "cordova-plugin-sqlite-2",
@@ -29,19 +31,22 @@
   },
   "homepage": "https://github.com/nolanlawson/sqlite-plugin-2#readme",
   "devDependencies": {
-    "bluebird": "^3.3.4",
-    "browserify": "^13.0.0",
-    "bundle-collapser": "^1.2.1",
-    "chai-as-promised": "^5.3.0",
-    "cordova": "^6.1.0",
-    "lodash.map": "^4.2.1",
-    "lodash.zipobject": "^4.1.2",
-    "mkdirp": "^0.5.1",
-    "pouchdb": "^5.3.1",
-    "replace": "^0.3.0",
-    "rimraf": "^2.5.2",
-    "rollupify": "^0.2.0",
-    "websql": "^0.2.1",
-    "zuul": "^3.10.1"
-  }
+    "appium": "1.5.0",
+    "bluebird": "3.3.4",
+    "browserify": "13.0.0",
+    "bundle-collapser": "1.2.1",
+    "chai-as-promised": "5.3.0",
+    "cordova": "6.1.0",
+    "lodash.map": "4.2.1",
+    "lodash.zipobject": "4.1.2",
+    "mkdirp": "0.5.1",
+    "pouchdb": "5.3.1",
+    "replace": "0.3.0",
+    "rimraf": "2.5.2",
+    "rollupify": "0.2.0",
+    "wd": "0.4.0",
+    "websql": "0.2.1",
+    "zuul": "3.10.1"
+  },
+  "files": ["src/android", "src/ios", "plugin.xml", "dist"]
 }

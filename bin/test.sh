@@ -2,6 +2,7 @@
 
 : ${PLATFORM:="android"}
 : ${CLEAN:="1"}
+: ${RUN:="1"}
 
 set -e
 set -v
@@ -39,4 +40,8 @@ $REPLACE '/__zuul' '.' www/zuul-client.js
 
 kill $ZUUL_PID
 
-$CORDOVA run $PLATFORM
+if [[ $RUN == '1' ]]; then
+  $CORDOVA run $PLATFORM
+else
+  $CORDOVA build $PLATFORM
+fi
