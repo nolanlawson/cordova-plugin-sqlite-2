@@ -6,13 +6,13 @@
 #import "SQLitePlugin.h"
 #import "sqlite3.h"
 
-// Set this to 0 when publishing
-#define DEBUG_MODE = 0;
+// Uncomment this to enable debug mode
+// #define DEBUG_MODE = 1;
 
 #ifdef DEBUG_MODE
-#   define NSLog(...) NSLog(__VA_ARGS__)
+#   define logDebug(...) NSLog(__VA_ARGS__)
 #else
-#   define NSLog(...)
+#   define logDebug(...)
 #endif
 
 @interface SQLitePluginResult : NSObject {
@@ -49,7 +49,7 @@
 @synthesize cachedDatabases;
 
 -(void)pluginInitialize {
-    NSLog(@"pluginInitialize()");
+    logDebug(@"pluginInitialize()");
     cachedDatabases = [NSMutableDictionary dictionaryWithCapacity:0];
     NSString *dbDir = [self getDatabaseDir];
     [[NSFileManager defaultManager] createDirectoryAtPath: dbDir
@@ -73,28 +73,28 @@
 }
 
 -(NSValue*)openDatabase: (NSString*)dbName {
-    NSLog(@"opening DB: %@", dbName);
+    logDebug(@"opening DB: %@", dbName);
     NSValue *cachedDB = [cachedDatabases objectForKey:dbName];
     if (cachedDB == nil) {
-        NSLog(@"opening new db");
+        logDebug(@"opening new db");
         NSString *fullDbPath = [self getPathForDB: dbName];
-        NSLog(@"full path: %@", fullDbPath);
+        logDebug(@"full path: %@", fullDbPath);
         const char *sqliteName = [fullDbPath UTF8String];
         sqlite3 *db;
         if (sqlite3_open(sqliteName, &db) != SQLITE_OK) {
-            NSLog(@"cannot open database: %@", dbName); // shouldn't happen
+            logDebug(@"cannot open database: %@", dbName); // shouldn't happen
         };
         cachedDB = [NSValue valueWithPointer:db];
         [cachedDatabases setObject: cachedDB forKey: dbName];
     } else {
-        NSLog(@"re-using existing db");
+        logDebug(@"re-using existing db");
     }
     return cachedDB;
 }
 
 -(void) run: (CDVInvokedUrlCommand*)command
 {
-    NSLog(@"run()");
+    logDebug(@"run()");
     [self.commandDelegate runInBackground:^{
         [self doOnBackgroundThread: @"run" withCommand: command];
     }];
@@ -102,7 +102,7 @@
 
 -(void) all: (CDVInvokedUrlCommand*)command
 {
-    NSLog(@"all()");
+    logDebug(@"all()");
     [self.commandDelegate runInBackground:^{
         [self doOnBackgroundThread: @"all" withCommand: command];
     }];
@@ -110,14 +110,14 @@
 
 -(void) doOnBackgroundThread: (NSString *)type withCommand: (CDVInvokedUrlCommand *)command
 {
-    NSLog(@"doOnBackgroundThread()");
-    NSLog(@"type: %@", type);
+    logDebug(@"doOnBackgroundThread()");
+    logDebug(@"type: %@", type);
     NSString *dbName = [command.arguments objectAtIndex:0];
     NSString *sql = [command.arguments objectAtIndex:1];
     NSArray *sqlArgs = [command.arguments objectAtIndex:2];
-    NSLog(@"dbName: %@", dbName);
-    NSLog(@"sql: %@", sql);
-    NSLog(@"sqlArgs: %@", sqlArgs);
+    logDebug(@"dbName: %@", dbName);
+    logDebug(@"sql: %@", sql);
+    logDebug(@"sqlArgs: %@", sqlArgs);
     SQLitePluginResult *sqlResult;
     @synchronized(self) {
         sqlResult = [self executeSql:sql withSqlArgs:sqlArgs withDb: dbName];
@@ -155,7 +155,7 @@
 }
 
 -(SQLitePluginResult*) executeSql: (NSString*)sql withSqlArgs: (NSArray*)sqlArgs withDb: (NSString*)dbName {
-    NSLog(@"executeSql sql: %@", sql);
+    logDebug(@"executeSql sql: %@", sql);
     NSString *error = nil;
     sqlite3_stmt *statement;
     int i;
@@ -173,11 +173,11 @@
     sqlite3 *db = [databasePointer pointerValue];
     
     // compile the statement, throw an error if necessary
-    NSLog(@"sqlite3_prepare_v2");
+    logDebug(@"sqlite3_prepare_v2");
     if (sqlite3_prepare_v2(db, [sql UTF8String], -1, &statement, NULL) != SQLITE_OK) {
         error = [SQLitePlugin convertSQLiteErrorToString:db];
-        NSLog(@"prepare error!");
-        NSLog(@"error: %@", error);
+        logDebug(@"prepare error!");
+        logDebug(@"error: %@", error);
         [resultSet setError:error];
         return resultSet;
     }
@@ -204,7 +204,7 @@
     int result;
     NSObject *columnValue;
     while (hasMore) {
-        NSLog(@"sqlite3_step");
+        logDebug(@"sqlite3_step");
         result = sqlite3_step (statement);
         switch (result) {
             case SQLITE_ROW:
@@ -245,7 +245,7 @@
         }
     }
     
-    NSLog(@"sqlite3_finalize");
+    logDebug(@"sqlite3_finalize");
     sqlite3_finalize (statement);
     
     if (error) {
@@ -261,7 +261,7 @@
         }
     }
     
-    NSLog(@"done executeSql sql: %@", sql);
+    logDebug(@"done executeSql sql: %@", sql);
     return resultSet;
 }
 
