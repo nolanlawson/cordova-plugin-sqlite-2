@@ -1,4 +1,4 @@
-Cordova SQLite Plugin 2
+Cordova SQLite Plugin 2 [![Build Status](https://travis-ci.org/nolanlawson/sqlite-plugin-2.svg?branch=master)](https://travis-ci.org/nolanlawson/sqlite-plugin-2)
 =====
 
 A rewrite of the [Cordova SQLite Plugin](https://github.com/litehelpers/Cordova-sqlite-storage) (aka "SQLite storage"). For most use cases, it should be a drop-in replacement.

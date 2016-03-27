@@ -1,10 +1,5 @@
 'use strict';
 
-var ANDROID_PATH = './test/platforms/android/build/outputs/apk/android-debug.apk';
-var MAX_NUM_TRIES = 50;
-var RETRY_TIMEOUT = 5000;
-var WAIT_TIMEOUT = 3000;
-
 var Promise = require('bluebird');
 var wd = require('wd');
 var chai = require('chai');
@@ -17,16 +12,35 @@ chai.use(chaiAsPromised);
 chai.should();
 chaiAsPromised.transferPromiseness = wd.transferPromiseness;
 
-var app = path.resolve(ANDROID_PATH);
+var ANDROID_PATH = './test/platforms/android/build/outputs/apk/android-debug.apk';
+var IOS_PATH = './test/platforms/ios';
+var MAX_NUM_TRIES = 50;
+var RETRY_TIMEOUT = 5000;
+var WAIT_TIMEOUT = 3000;
+var PLATFORM = process.env.ANDROID ? 'android' : 'ios';
 
-var desired = {
-  'appium-version': '1.0',
-  platformName: 'Android',
-  deviceName: 'foobar',
-  app: app,
-  'app-package': 'com.nolanlawson.cordova.sqlite.test',
-  'app-activity': 'MainActivity'
-};
+var app;
+var desired;
+
+if (PLATFORM === 'android') {
+  app = path.resolve(ANDROID_PATH);
+  desired = {
+    platformName: 'Android',
+    deviceName: 'foobar',
+    app: app,
+    'app-package': 'com.nolanlawson.cordova.sqlite.test',
+    'app-activity': 'MainActivity'
+  };
+} else { // ios
+  app = path.resolve(IOS_PATH);
+  desired = {
+    platformName: 'iOS',
+    deviceName: 'iPhone Simulator',
+    platformVersion: '9.1',
+    app: app
+  };
+}
+
 
 var driver = wd.promiseChainRemote('0.0.0.0', 4723);
 var browser = driver.init(desired);
@@ -89,7 +103,7 @@ function waitForZuul() {
   });
 }
 
-console.log('running tests...');
+console.log('running tests on platform: ' + PLATFORM);
 runTest().then(function () {
   console.log('done!');
   process.exit(0);

@@ -1,0 +1,20 @@
+language: node_js
+
+node_js:
+  - "stable"
+
+sudo: false
+
+script: npm run $COMMAND
+
+before_script:
+  - "export DISPLAY=:99.0"
+  - "sh -e /etc/init.d/xvfb start"
+
+env:
+  matrix:
+  - COMMAND=test-phantom
+
+branches:
+  only:
+  - master
