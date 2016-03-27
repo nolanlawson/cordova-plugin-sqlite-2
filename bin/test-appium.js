@@ -13,7 +13,7 @@ chai.should();
 chaiAsPromised.transferPromiseness = wd.transferPromiseness;
 
 var ANDROID_PATH = './test/platforms/android/build/outputs/apk/android-debug.apk';
-var IOS_PATH = './test/platforms/ios';
+var IOS_PATH = './test/platforms/ios/build/emulator/SQLitePlugin2.app';
 var MAX_NUM_TRIES = 50;
 var RETRY_TIMEOUT = 5000;
 var WAIT_TIMEOUT = 3000;
