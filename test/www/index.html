@@ -20,6 +20,11 @@
 <script>
   var ZUUL = {};
 </script>
+<script>
+  // Zuul/Appium add globals, and we want Mocha to ignore them
+  window.frame = null;
+  window.isLoaded = false;
+</script>
 <script type="text/javascript" src="cordova.js"></script>
 <script>
   document.addEventListener('deviceready', function () {

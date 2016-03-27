@@ -11,7 +11,7 @@ Usage
 Then the API is exactly the same as WebSQL:
 
 ```js
-var db = sqlitePlugin.openDatabase('mydb', '1.0', 'mydb', 1);
+var db = openDatabase('mydb', '1.0', 'mydb', 1);
 db.transaction(function (txn) {
   txn.executeSql('select "hello world" from sqlite_master', [], function (tx, res) {
     console.log(res.rows.item(0)); // "hello world"
@@ -40,3 +40,31 @@ IndexedDB is the future of storage on the web. If possible, you should use that,
 **You should not use this library in Android.** Just don't. IndexedDB and WebSQL are well supported and faster on that platform.
 
 **On iOS,** this plugin is still slower than native WebSQL due to the overhead of serializing data sent between the WebView and the native layer. (N.B.: just because something is "native" doesn't mean it's magically faster.) But sometimes native WebSQL isn't an option: e.g. you are using WKWebView, or you need to store more than the maximum allowed by Apple.
+
+Building
+---
+
+Check out the code, then run:
+
+    npm install
+
+Then:
+
+    npm run build
+
+This will build the JS files and write them to `dist/`.
+
+Testing
+----
+
+To run the tests on any available Android device:
+
+    npm run test-android
+
+To run the tests on any available iOS device:
+
+    npm run test-ios
+
+To run the sanity tests against PhantomJS (using normal WebSQL):
+
+    npm run test-phantom

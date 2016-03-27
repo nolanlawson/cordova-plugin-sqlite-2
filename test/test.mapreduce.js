@@ -585,7 +585,7 @@ function tests(suiteName, dbName, dbType, viewType) {
       });
     });
 
-    it("Built in _stats reduce function should throw an error with a promise",
+    it.skip("Built in _stats reduce function should throw an error with a promise",
       function () {
       return new PouchDB(dbName).then(function (db) {
         return createView(db, {
@@ -605,7 +605,7 @@ function tests(suiteName, dbName, dbType, viewType) {
       }).should.be.rejected;
     });
 
-    it("Built in _sum reduce function should throw an error with a promise",
+    it.skip("Built in _sum reduce function should throw an error with a promise",
       function () {
       return new PouchDB(dbName).then(function (db) {
         return createView(db, {
@@ -625,7 +625,7 @@ function tests(suiteName, dbName, dbType, viewType) {
       }).should.be.rejected;
     });
 
-    it("Built in _sum reduce function with num arrays should throw an error",
+    it.skip("Built in _sum reduce function with num arrays should throw an error",
       function () {
       return new PouchDB(dbName).then(function (db) {
         return createView(db, {
@@ -683,7 +683,7 @@ function tests(suiteName, dbName, dbType, viewType) {
       });
     }
 
-    it('Query result should include _conflicts', function () {
+    it.skip('Query result should include _conflicts', function () {
       var db2name = 'test2b' + Math.random();
       var cleanup = function () {
         return new PouchDB(db2name).destroy();
@@ -1353,7 +1353,7 @@ function tests(suiteName, dbName, dbType, viewType) {
       });
     });
 
-    it('multiple view creations and cleanups', function () {
+    it.skip('multiple view creations and cleanups', function () {
       return new PouchDB(dbName).then(function (db) {
         var map = function (doc) {
           emit(doc.num);
@@ -2482,7 +2482,7 @@ function tests(suiteName, dbName, dbType, viewType) {
       });
     });
 
-    it('should query correctly after many edits', function () {
+    it.skip('should query correctly after many edits', function () {
       return new PouchDB(dbName).then(function (db) {
         return createView(db, {
           map : function (doc) {
@@ -3135,7 +3135,7 @@ function tests(suiteName, dbName, dbType, viewType) {
       });
     });
 
-    it('should continue indexing when map eval fails (#214)', function () {
+    it.skip('should continue indexing when map eval fails (#214)', function () {
       return new PouchDB(dbName).then(function (db) {
         var err;
         db.on('error', function (e) {
@@ -3174,7 +3174,7 @@ function tests(suiteName, dbName, dbType, viewType) {
       });
     });
 
-    it('should continue indexing when map eval fails, ' +
+    it.skip('should continue indexing when map eval fails, ' +
         'even without a listener (#214)', function () {
       return new PouchDB(dbName).then(function (db) {
         return createView(db, {
@@ -3207,7 +3207,7 @@ function tests(suiteName, dbName, dbType, viewType) {
       });
     });
 
-    it('should update the emitted value', function () {
+    it.skip('should update the emitted value', function () {
       return new PouchDB(dbName).then(function (db) {
         var docs = [];
         for (var i = 0; i < 300; i++) {

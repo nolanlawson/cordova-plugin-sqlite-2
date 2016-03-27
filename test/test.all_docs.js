@@ -611,7 +611,7 @@ adapters.forEach(function (adapter) {
       });
     });
 
-    it('#3082 test wrong num results returned', function () {
+    it.skip('#3082 test wrong num results returned', function () {
       var db = new PouchDB(dbs.name);
       var docs = [];
       for (var i = 0; i < 1000; i++) {

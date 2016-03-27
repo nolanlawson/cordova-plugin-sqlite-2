@@ -7,8 +7,6 @@ var adapters = [
   ['local', 'local']
 ];
 
-var downAdapters = ['local'];
-
 adapters.forEach(function (adapters) {
   describe('suite2 test.replication.js-' + adapters[0] + '-' + adapters[1],
     function () {
@@ -136,7 +134,7 @@ adapters.forEach(function (adapters) {
       });
     });
 
-    it('Test pull replication with many changes', function (done) {
+    it.skip('Test pull replication with many changes', function (done) {
       var remote = new PouchDB(dbs.remote);
 
       var numDocs = 201;
@@ -317,7 +315,7 @@ adapters.forEach(function (adapters) {
       });
     });
 
-    it('Test pull replication with many conflicts', function (done) {
+    it.skip('Test pull replication with many conflicts', function (done) {
       var remote = new PouchDB(dbs.remote);
 
       var numRevs = 200; // repro "url too long" error with open_revs
@@ -1167,7 +1165,7 @@ adapters.forEach(function (adapters) {
       });
     });
 
-    it('Test _conflicts key', function (done) {
+    it.skip('Test _conflicts key', function (done) {
       var db = new PouchDB(dbs.name);
       var remote = new PouchDB(dbs.remote);
       var doc1 = {_id: 'adoc', foo: 'bar'};
@@ -2525,7 +2523,7 @@ adapters.forEach(function (adapters) {
       });
     });
 
-    it('doc count after multiple replications', function (done) {
+    it.skip('doc count after multiple replications', function (done) {
 
       var runs = 2;
       // helper. remove each document in db and bulk load docs into same
@@ -2677,7 +2675,7 @@ adapters.forEach(function (adapters) {
         });
       });
     });
-    it('should work with a read only source', function (done) {
+    it.skip('should work with a read only source', function (done) {
       var src = new PouchDB(dbs.name);
       var target = new PouchDB(dbs.remote);
       var err = {
@@ -2905,7 +2903,7 @@ adapters.forEach(function (adapters) {
     // test validate_doc_update, which is a reasonable substitute
     // for testing design doc replication of non-admin users, since we
     // always test in admin party
-    it('#2268 dont stop replication if single forbidden', function (done) {
+    it.skip('#2268 dont stop replication if single forbidden', function (done) {
 
       testUtils.isCouchDB(function (isCouchDB) {
         if (adapters[1] !== 'http' || !isCouchDB) {
@@ -2946,7 +2944,7 @@ adapters.forEach(function (adapters) {
       });
     });
 
-    it('#2268 dont stop replication if single unauth', function (done) {
+    it.skip('#2268 dont stop replication if single unauth', function (done) {
 
       testUtils.isCouchDB(function (isCouchDB) {
         if (adapters[1] !== 'http' || !isCouchDB) {
@@ -2987,7 +2985,7 @@ adapters.forEach(function (adapters) {
       });
     });
 
-    it('#2268 dont stop replication if many unauth', function (done) {
+    it.skip('#2268 dont stop replication if many unauth', function (done) {
 
       testUtils.isCouchDB(function (isCouchDB) {
         if (adapters[1] !== 'http' || !isCouchDB) {
@@ -3031,7 +3029,7 @@ adapters.forEach(function (adapters) {
 
     // Errors from validate_doc_update should have the message
     // defined in PourchDB.Errors instead of the thrown value.
-    it('#3171 Forbidden validate_doc_update error message',
+    it.skip('#3171 Forbidden validate_doc_update error message',
         function (done) {
       testUtils.isCouchDB(function (isCouchDB) {
         if (adapters[1] !== 'http' || !isCouchDB) {
@@ -3660,37 +3658,6 @@ adapters.forEach(function (adapters) {
       }).then(function() {
         seenTimeout.should.equal(true);
         PouchDB.utils.ajax = ajax;
-        done();
-      });
-    });
-
-  });
-});
-
-// This test only needs to run for one configuration, and it slows stuff
-// down
-downAdapters.map(function () {
-
-  describe('suite2 test.replication.js-down-test', function () {
-
-    var dbs = {};
-
-    beforeEach(function (done) {
-      dbs.name = testUtils.adapterUrl(adapters[0], 'testdb');
-      testUtils.cleanup([dbs.name], done);
-    });
-
-    afterEach(function (done) {
-      testUtils.cleanup([dbs.name], done);
-    });
-
-    it('replicate from down server test', function (done) {
-      var source = new PouchDB('http://infiniterequest.com', {
-        ajax: {timeout: 10}
-      });
-      var target = new PouchDB(dbs.name);
-      source.replicate.to(target, function (err) {
-        should.exist(err);
         done();
       });
     });
