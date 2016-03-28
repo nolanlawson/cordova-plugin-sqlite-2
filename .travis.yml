@@ -10,6 +10,7 @@ script: npm run $COMMAND
 before_install:
 - brew update
 - brew install android
+- brew install nvm
 env:
   matrix:
   - COMMAND=test-phantom
