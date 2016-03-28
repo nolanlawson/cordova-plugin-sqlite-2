@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 : ${PLATFORM:="android"}
+: ${WKWEBVIEW:="0"}
 : ${CLEAN:="1"}
 : ${RUN:="1"}
 
@@ -20,8 +21,17 @@ cd test
 
 if [[ $CLEAN == '1' ]]; then
   bash -c "$CORDOVA plugin rm cordova-plugin-sqlite-2 >/dev/null 2>/dev/null; exit 0"
+  bash -c "$CORDOVA platform rm cordova-plugin-wkwebview-engine >/dev/null 2>/dev/null; exit 0"
   bash -c "$CORDOVA platform rm $PLATFORM >/dev/null 2>/dev/null; exit 0"
-  $CORDOVA platform add $PLATFORM
+  if [[ $PLATFORM == 'ios' ]]; then
+    if [[ $WKWEBVIEW == '1' ]]; then
+      $CORDOVA platform add ios@4.0.0
+    else
+      $CORDOVA platform add ios
+    fi
+  else
+    $CORDOVA platform add android
+  fi
   $CORDOVA plugin add ..
 fi
 

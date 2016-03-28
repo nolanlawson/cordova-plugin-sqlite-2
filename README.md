@@ -48,9 +48,9 @@ needs to justify its existence.
 
 This plugin aims for:
 
-- **Minimalism:** just polyfill WebSQL via native SQLite.
-- **Correctness:** heavily tested, with over 600 tests that run in Travis CI.
-- **Simplicity**: uses [node-websql](https://github.com/nolanlawson/node-websql) to minimize native code. Transactional logic is mostly implemented in JavaScript.
+- **Minimalism:** Just polyfill WebSQL via native SQLite.
+- **Correctness:** Over 600 automated tests that run in CI (many borrowed from the [PouchDB](http://pouchdb.com/) test suite).
+- **Simplicity**: Uses [node-websql](https://github.com/nolanlawson/node-websql) to minimize native code. Transactional logic is mostly implemented in JavaScript.
 
 Why not just use the original SQLite Plugin? Mostly because I just felt like rewriting it.
 Also because I was unsatisfied with the lack of tests and occasional breakages due to the lack of tests. Hopefully
@@ -89,6 +89,10 @@ To run the tests on any available Android device:
 To run the tests on any available iOS device:
 
     npm run test-ios
+
+Or using WKWebView:
+
+    WKWEBVIEW=1 npm run test-ios
 
 To run the sanity tests against PhantomJS (using normal WebSQL):
 
