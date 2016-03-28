@@ -6,6 +6,7 @@ var chai = require('chai');
 var chaiAsPromised = require('chai-as-promised');
 var path = require('path');
 var find = require('lodash.find');
+var sauceConnectLauncher = require('sauce-connect-launcher');
 var reporter = require('./test-reporter');
 
 chai.use(chaiAsPromised);
@@ -19,6 +20,9 @@ var RETRY_TIMEOUT = 5000;
 var WAIT_TIMEOUT = 3000;
 var PLATFORM = process.env.PLATFORM || 'android';
 
+var username = process.env.SAUCE_USERNAME;
+var accessKey = process.env.SAUCE_ACCESS_KEY;
+
 var app;
 var desired;
 
@@ -31,6 +35,9 @@ if (PLATFORM === 'android') {
     'app-package': 'com.nolanlawson.cordova.sqlite.test',
     'app-activity': 'MainActivity'
   };
+  if (process.env.TRAVIS) {
+    desired.platformVersion = process.env.PLATFORM_VERSION;
+  }
 } else { // ios
   app = path.resolve(IOS_PATH);
   desired = {
@@ -41,9 +48,11 @@ if (PLATFORM === 'android') {
   };
 }
 
-
-var driver = wd.promiseChainRemote('0.0.0.0', 4723);
-var browser = driver.init(desired);
+var driver;
+var browser;
+var sauceConnectProcess;
+var failures = 0;
+var numTries = 0;
 
 function wait(ms) {
   return new Promise(function (resolve) {
@@ -63,9 +72,6 @@ function runTest() {
     return driver.context(webViewContext);
   }).then(waitForZuul);
 }
-
-var failures = 0;
-var numTries = 0;
 
 function waitForZuul() {
   console.log('pinging zuul, try #' + (numTries + 1) + '...');
@@ -89,7 +95,7 @@ function waitForZuul() {
       reporter.emit(message.type, message);
     });
     var doneMessage = find(messages, function (message) {
-        return message.type === 'done';
+      return message.type === 'done';
     });
     if (failures > 0) {
       throw new Error('there were failing tests');
@@ -103,11 +109,52 @@ function waitForZuul() {
   });
 }
 
-console.log('running tests on platform: ' + PLATFORM);
-runTest().then(function () {
+function sauceSetup() {
+  var options = {
+    username: username,
+    accessKey: accessKey,
+    tunnelIdentifier: process.env['TRAVIS_JOB_NUMBER']
+  };
+  return new Promise(function (resolve, reject) {
+    sauceConnectLauncher(options, function (err, process) {
+      if (err) {
+        return reject(err);
+      }
+      resolve(process);
+    });
+  }).then(function (process) {
+    sauceConnectProcess = process;
+    driver = wd.promiseChainRemote("localhost", 4445, username, accessKey);
+    browser = driver.init(desired);
+  });
+}
+
+function setup() {
+  if (process.env.TRAVIS) {
+    return sauceSetup();
+  } else {
+    driver = wd.promiseChainRemote('127.0.0.1', 4723);
+    browser = driver.init(desired);
+  }
+}
+
+function cleanup() {
+  if (sauceConnectProcess) {
+    sauceConnectProcess.close();
+  }
+}
+
+Promise.resolve().then(function () {
+  return setup();
+}).then(function () {
+  console.log('running tests on platform: ' + PLATFORM);
+  return runTest();
+}).then(function () {
+  cleanup();
   console.log('done!');
   process.exit(0);
 }).catch(function (err) {
+  cleanup();
   console.log(err.stack);
   process.exit(1);
 });
