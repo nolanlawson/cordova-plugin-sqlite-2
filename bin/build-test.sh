@@ -21,8 +21,9 @@ cd test
 
 if [[ $CLEAN == '1' ]]; then
   bash -c "$CORDOVA plugin rm cordova-plugin-sqlite-2 >/dev/null 2>/dev/null; exit 0"
-  bash -c "$CORDOVA platform rm cordova-plugin-wkwebview-engine >/dev/null 2>/dev/null; exit 0"
-  bash -c "$CORDOVA platform rm $PLATFORM >/dev/null 2>/dev/null; exit 0"
+  bash -c "$CORDOVA plugin rm cordova-plugin-wkwebview-engine >/dev/null 2>/dev/null; exit 0"
+  bash -c "$CORDOVA platform rm android >/dev/null 2>/dev/null; exit 0"
+  bash -c "$CORDOVA platform rm ios >/dev/null 2>/dev/null; exit 0"
   if [[ $PLATFORM == 'ios' ]]; then
     if [[ $WKWEBVIEW == '1' ]]; then
       $CORDOVA platform add ios@4.0.0

@@ -17,7 +17,7 @@ var IOS_PATH = './test/platforms/ios/build/emulator/SQLitePlugin2.app';
 var MAX_NUM_TRIES = 100;
 var RETRY_TIMEOUT = 5000;
 var WAIT_TIMEOUT = 3000;
-var PLATFORM = process.env.ANDROID ? 'android' : 'ios';
+var PLATFORM = process.env.PLATFORM || 'android';
 
 var app;
 var desired;

@@ -18,6 +18,28 @@ function expectError(promise) {
 
 describe('basic test suite', function () {
 
+  it('throw error for openDatabase args < 1', function () {
+    return expectError(Promise.resolve().then(function () {
+      openDatabase();
+    }));
+  });
+  it('throw error for openDatabase args < 2', function () {
+    return expectError(Promise.resolve().then(function () {
+      openDatabase(':memory:');
+    }));
+  });
+  it('throw error for openDatabase args < 3', function () {
+    return expectError(Promise.resolve().then(function () {
+      openDatabase(':memory:', 'yolo');
+    }));
+  });
+
+  it('throw error for openDatabase args < 4', function () {
+    return expectError(Promise.resolve().then(function () {
+      openDatabase(':memory:', 'yolo', 'hey');
+    }));
+  });
+
   it('does a basic database operation', function () {
     var db = openDatabase(':memory:', '1.0', 'yolo', 100000);
     return new Promise(function (resolve, reject) {

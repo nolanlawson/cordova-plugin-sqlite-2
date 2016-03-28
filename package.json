@@ -4,12 +4,13 @@
   "description": "Cordova SQLite Plugin 2",
   "scripts": {
     "build": "rimraf dist && mkdirp dist && browserify -t rollupify -s sqlitePlugin src/javascript/index.js > dist/sqlite-plugin.js",
-    "test": "bash ./bin/build-test.sh",
+    "build-test": "bash ./bin/build-test.sh",
+    "test": "npm run test-phantom",
     "test-local": "zuul --ui mocha-bdd --local 9000 --no-coverage test/test.js",
     "test-phantom": "npm run build && zuul --ui mocha-bdd --phantom --no-coverage test/test.js",
     "test-android": "PLATFORM=android npm run test-device",
     "test-ios": "PLATFORM=ios npm run test-device",
-    "test-device": "npm run build && RUN=0 npm run test && bash ./bin/run-and-test-appium.sh",
+    "test-device": "npm run build && RUN=0 npm run build-test && bash ./bin/run-and-test-appium.sh",
     "prepublish": "npm run build"
   },
   "cordova": {
