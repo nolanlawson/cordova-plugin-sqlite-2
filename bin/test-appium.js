@@ -26,26 +26,42 @@ var accessKey = process.env.SAUCE_ACCESS_KEY;
 var app;
 var desired;
 
-if (PLATFORM === 'android') {
+function configureAndroid() {
   app = path.resolve(ANDROID_PATH);
   desired = {
     platformName: 'Android',
     deviceName: 'foobar',
-    app: app,
     'app-package': 'com.nolanlawson.cordova.sqlite.test',
-    'app-activity': 'MainActivity'
+    'app-activity': 'MainActivity',
+    app: app
   };
   if (process.env.TRAVIS) {
     desired.platformVersion = process.env.PLATFORM_VERSION;
+    // via https://wiki.saucelabs.com/display/DOCS/Platform+Configurator
+    desired.browserName = '';
+    desired.appiumVersion = '1.5.0';
+    desired.deviceName = 'Android Emulator';
+    desired.deviceType = 'phone';
+    desired.deviceOrientation = 'portrait';
+    desired.platformName = 'Android';
   }
-} else { // ios
+}
+
+function configureIos() {
   app = path.resolve(IOS_PATH);
   desired = {
+    'appium-version': '1.5.0',
     platformName: 'iOS',
     deviceName: 'iPhone Simulator',
     platformVersion: '9.1',
     app: app
   };
+}
+
+if (PLATFORM === 'android') {
+  configureAndroid();
+} else { // ios
+  configureIos();
 }
 
 var driver;
