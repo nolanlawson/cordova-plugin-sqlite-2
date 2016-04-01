@@ -18,22 +18,28 @@
   }(this));
 </script>
 <script>
-  var ZUUL = {};
-</script>
-<script>
-  // Zuul/Appium add globals, and we want Mocha to ignore them
-  window.frame = null;
-  window.isLoaded = false;
+  (function () {
+    window.ZUUL = {};
+
+    // Zuul/Appium add globals, and we want Mocha to ignore them
+    window.frame = null;
+    window.isLoaded = false;
+
+    window.getZuulMessages = function getZuulMessages() {
+      return window.zuul_msg_bus ?
+        window.zuul_msg_bus.splice(0, window.zuul_msg_bus.length) :
+        [];
+    };
+
+    document.addEventListener('deviceready', function () {
+      ['zuul-framework.js', 'zuul-client.js'].forEach(function (scriptName) {
+        var script = document.createElement('script');
+        script.src = scriptName;
+        document.body.appendChild(script);
+      });
+    });
+  })();
 </script>
 <script type="text/javascript" src="cordova.js"></script>
-<script>
-  document.addEventListener('deviceready', function () {
-    ['zuul-framework.js', 'zuul-client.js'].forEach(function (scriptName) {
-      var script = document.createElement('script');
-      script.src = scriptName;
-      document.body.appendChild(script);
-    });
-  });
-</script>
 </body>
 </html>

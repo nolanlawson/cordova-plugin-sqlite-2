@@ -95,9 +95,7 @@ function runTest() {
 
 function waitForZuul() {
   console.log('pinging zuul, try #' + (numTries + 1) + '...');
-  var script = 'window.zuul_msg_bus ? ' +
-    'window.zuul_msg_bus.splice(0, window.zuul_msg_bus.length) : ' +
-    '[]';
+  var script = 'getZuulMessages()';
 
   return browser.eval(script).then(function (messages) {
     if (!messages.length) {
