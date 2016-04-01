@@ -7,9 +7,6 @@ script: npm run $COMMAND
 before_install:
 - brew update
 - brew install android
-- brew install nvm
-- nvm install stable
-- nvm use stable
 env:
   matrix:
   - COMMAND=test-phantom
