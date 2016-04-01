@@ -6,7 +6,6 @@ addons:
 script: npm run $COMMAND
 before_install:
 - brew update
-- brew install node
 - brew install android
 - brew install nvm
 - nvm install stable
