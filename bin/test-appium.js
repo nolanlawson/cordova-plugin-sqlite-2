@@ -8,6 +8,10 @@ var path = require('path');
 var find = require('lodash.find');
 var sauceConnectLauncher = require('sauce-connect-launcher');
 var reporter = require('./test-reporter');
+var request = require('request-promise');
+var denodeify = require('denodeify');
+var readFile = denodeify(require('fs').readFile);
+var uuid = require('uuid');
 
 chai.use(chaiAsPromised);
 chai.should();
@@ -125,6 +129,30 @@ function waitForZuul() {
   });
 }
 
+function uploadAppToSauceAndGetUrl() {
+  var filepath = desired.app;
+
+  var id = uuid.v4();
+  return readFile(filepath).then(function (buffer) {
+    var uploadUrl = 'https://saucelabs.com/rest/v1/storage/' +
+      username + '/' + id + '.apk';
+    return request({
+      method: 'POST',
+      uri: uploadUrl,
+      body: buffer,
+      headers: {
+        'Content-Type': 'application/octet-stream'
+      },
+      auth: {
+        user: username,
+        pass: accessKey
+      }
+    });
+  }).then(function () {
+    return 'sauce-storage:' + id + '.apk';
+  });
+}
+
 function sauceSetup() {
   var options = {
     username: username,
@@ -141,6 +169,9 @@ function sauceSetup() {
   }).then(function (process) {
     sauceConnectProcess = process;
     driver = wd.promiseChainRemote("localhost", 4445, username, accessKey);
+    return uploadAppToSauceAndGetUrl();
+  }).then(function (url) {
+    desired.app = url;
     browser = driver.init(desired);
   });
 }
