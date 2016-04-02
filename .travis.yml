@@ -1,29 +1,23 @@
 os:
 - osx
 sudo: false
-addons:
-  sauce_connect: true
 script: npm run $COMMAND
 before_install:
 - brew update
-- brew install android
-- "( sleep 5 && while [ 1 ]; do sleep 1; echo y; done ) | /usr/local/bin/android update
-  sdk --no-ui --all --filter platform-tool,android-23,build-tools-23.0.3"
+- ./bin/install-android-on-travis.sh
 - curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.31.0/install.sh | bash
 - source ~/.nvm/nvm.sh
 - nvm install stable
 - nvm use stable
 - npm install
+- SAUCE_CONNECT_DOWNLOAD_ON_INSTALL=true node node_modules/sauce-connect-launcher/scripts/install.js
 env:
   matrix:
   - COMMAND=test-phantom
-  - PLATFORM_VERSION=5.1 COMMAND=test-android
+  - PLATFORM_VERSION=5.1 PLATFORM=android COMMAND=test
   global:
   - secure: I2fsy2KNDavh8WHv4nnJb0YFf6T16V+Pqm5AS4Q9A+e1+GF6d+3DwXMh/9ZZEFP0Tz7oXF5LUidQkzNF1h7+xX3jQaHBtBxEzL9rYMK2DAci0ndRKo7NnEQJFYDxabK6mHcBQ/lISu0yr5XbFxuBCx62PeCmoLOt7x0/n2lN+7c2pPbtoJfSLIdnLznnttMVAJXSkCjdCw852o5nqke1kF6FlfE8oX2O4FU9F6sAZnSzC4ahbOmED2XfmL920PisgpuG1xSiLuN7qOG4VSIE41cpbvnlE9YrmiMWTXdLtl87k/u1xu8HmFmtGSer6X/OV4k2xAbyttwWUIRIXJ/D1mN93C3LARN5JkpgRbxJUsfbo8IEs43mamYcveH66YLysyc24SSd5PQbVJxjbgZn76TtipUQHVkjT5oS9GAB6QUd5G0P+VV1nsbGMD2KIz/eZ5lG6wz11PSUk6BetY3wf67W+DI2thWHdyvZCaCplwBTigkbieOB88E6un/CE52VXA3T04BF3LJ9nUhsToCC9j5/WVWDa8tt6dB/+A3QOa9awmkDwcwGLVdi9/9vglFTteQfdNJvzbfSaY/jGagWlnvp3vxu2UCFNIYBAJE/L7OaTEuVLOWzU49UGmWRE7aiYuFy56RC0kJ0/6N0f87K6lH6yJ+x+P5w/VEO44iiTEI=
   - secure: KDTzrNdWGdHgtTFw8kfwYixgfnnI73Y970kSYNPPwetyUlR0oN5mqDCXm8NlWy0AMdlZ3+YQMwHb1ScsuEx/ZSh1U52r49DLzOp5gyi5n3mKKJNFnogKhElxdNHPin5phiTP6Ii6LWptbu/G7H88uSvJlAuurIejzlLzbPTNG3zc49JlIu/z1DUJJwktQ5Knr6Gav4aIQfvSlbCGXHwBnMtHkivdZfxlCNAFp9+54Af2ILF4NsGK3E4Cv6uBP2WvZ8ZRjY33Nw+howQEh8S29rAl3B1qs+OrmdgSDCM5eRCfZSNFTX92frSfNxTbH4dkJuMt2eq3SDIuS09fFfMQyvGZsD1uRC454Zn+vU5xgOic2PMKHuxEuiQpjRQWVZNhkJma8UGB+wYqHn3y+VVxg/8Ifd5t9a6hnAJNWH29Q+ovdtNzXhfH8/BBXcRMCUdgo5NEMNOIPxOM2luxabWmv9E1VxuIVi+38nhWBm3XZajssM1ugIKMvnpfQlB6vWDbrA40Xuj2ZCtomxu9wTMfvv46ra0y6MM1zE5SHjO78PiisRQ2dNwlnRpFzaVeKDUAbwl02WPpbMHFq4cToCW0dkZXCfnkWP9uENJNjBD5Y14t5lXJ7rspj2ddKXwgU0UTp1zi+7WdUyD8rlETu9Z56u79Lf5o1QLPUM0qW8uC7ik=
-matrix:
-  allow_failures:
-  - env: PLATFORM_VERSION=5.1 COMMAND=test-android
 branches:
   only:
   - master
