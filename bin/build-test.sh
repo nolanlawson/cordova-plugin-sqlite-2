@@ -28,6 +28,7 @@ if [[ $CLEAN == '1' ]]; then
   if [[ $PLATFORM == 'ios' ]]; then
     if [[ $WKWEBVIEW == '1' ]]; then
       $CORDOVA platform add ios@4.0.0
+      $CORDOVA plugin add cordova-plugin-wkwebview-engine
     else
       $CORDOVA platform add ios
     fi
