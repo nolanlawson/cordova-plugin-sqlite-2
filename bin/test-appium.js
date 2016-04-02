@@ -155,7 +155,6 @@ function sauceSetup() {
   var options = {
     username: username,
     accessKey: accessKey,
-    startConnect: false,
     tunnelIdentifier: process.env['TRAVIS_JOB_NUMBER'] || 'tunnel-' + Date.now()
   };
   return new Promise(function (resolve, reject) {
