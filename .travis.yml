@@ -1,5 +1,5 @@
 os:
-  - osx
+- osx
 sudo: false
 addons:
   sauce_connect: true
@@ -7,7 +7,8 @@ script: npm run $COMMAND
 before_install:
 - brew update
 - brew install android
-- ( sleep 5 && while [ 1 ]; do sleep 1; echo y; done ) | /usr/local/bin/android update sdk --no-ui --all --filter platform-tool,android-23,build-tools-23.0.3
+- "( sleep 5 && while [ 1 ]; do sleep 1; echo y; done ) | /usr/local/bin/android update
+  sdk --no-ui --all --filter platform-tool,android-23,build-tools-23.0.3"
 - curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.31.0/install.sh | bash
 - source ~/.nvm/nvm.sh
 - nvm install stable
@@ -18,8 +19,8 @@ env:
   - COMMAND=test-phantom
   - PLATFORM_VERSION=5.1 COMMAND=test-android
   global:
-  - secure: hg515xY6W92K2KONptvZ0L6ORJ830piafJO7wKRoo2bAxI+480FQhJ5dcspEcNpC+WxDwk5S2/untkJGOFJy9zMDHB0dU2hf89IGIRDwp58XHIdhSr+y308sl5JXhIs/PzKlS2FifCwXBXJJF8Waf/C0KqWRR+UOhvD4DvCj858Jz/lnSFP+7ZgLtRiLGjkkQyFUjEYmmkW3fzJ4YLuZWjXLwvky5bBdmQiNO/bEli0PJXMVonNKg+FpMm5zXZxBjkZXFV6S5YV6ZGcTa6+DJMiGE+00pfHxOLSriG8I3mYkmzN7J4apT1k53PnERD7wX41SbiDYhrRYjfKXhAV9/V/SuQn0EVx1OcEh4IX9IuTC9Aw1LbLA3T0dmdzdO4DD3F8zmZPyOnVXAzCrJFJFal5x0gOBApi8CPm3nnD2EEih9thwhT03mY9vzaEeDVpq7lhuqfULzMgeBkkoRsfJzHuiz9L4lp8BOIpF9vbuY1gD8l2+YwRihyFdGhm4ZHRF9Rw/22S5uPljd3Yeoc2qr73EtlDwYOktR6lBAYabtw2GKWAcy6ZNOuWqEZWha7KitamvtsZkpXj9SwVCH8krCq2eXa+OM55ItJTYA46rd94j2UjZ9rl0HkHi6/ztzKY31whHpa1wmXppQHi7wiaoPg0QwVC9XY9t0aKc1GKYmBI=
-  - secure: nBxMm16XzSWGPE53g6/lMVQlVdFFIYLiR9x+wCL7kAzdFo7pvZeOzOmuYtLBuFuwf707IwzwVfaAAcJ8zMtyyIPAXXF6mJpdx2btGcYgqUmcpHSlX6JBpDiYL420gqDll7wQjC57Am+L8Z3KJsxfID1tuxdojDdcRr5PsStnbnkqpGlhoi+gGCSTgpEGRlHVtCJ+Pn7COM2E6CzX7gN+wY4pE7FjtkIql7+4QwTlA7Sk27nv/gGxDgMz6pYocqpqYvrubizwKTrkmQ5heOL7rlmeRfJ/Jcaprnl5Zc/OiW2bVU7KMkgUW4gla02cVMJeCYgrSG/33lHU10XYTcrAeFKVgpcmb9zNbNTHy8nDGC8hhLYRr+lQ1drgAPP6Ye4nn/UYqfqP2Bjs1Ob5jiRgPlaVERLmTYQLiQ6UJJ6rLuWaYzKwVBPLuRg/S+3bYfJOkeK9Q3joJiOtN33dRMPctvC+vS6NyLPUMi64TpPCywB5KHk/iiRW7KLiCSMhhQ55cJ7l8h3spR1MXORIJKNvGFVoM0jPbP9tVSIuuwEuYdFXnWo3qaA0CeRCTjoGkJ349iM1ecmrJ67VyjeN3Lqda6lWxESbONG/5gSewAep3gGvkgyI8jmX9H1Z59ptT5bNsqhdfU+1rglGFIQwC2ZI6KjJzWhJwKYWmkLbXI6Ztdo=
+  - secure: I2fsy2KNDavh8WHv4nnJb0YFf6T16V+Pqm5AS4Q9A+e1+GF6d+3DwXMh/9ZZEFP0Tz7oXF5LUidQkzNF1h7+xX3jQaHBtBxEzL9rYMK2DAci0ndRKo7NnEQJFYDxabK6mHcBQ/lISu0yr5XbFxuBCx62PeCmoLOt7x0/n2lN+7c2pPbtoJfSLIdnLznnttMVAJXSkCjdCw852o5nqke1kF6FlfE8oX2O4FU9F6sAZnSzC4ahbOmED2XfmL920PisgpuG1xSiLuN7qOG4VSIE41cpbvnlE9YrmiMWTXdLtl87k/u1xu8HmFmtGSer6X/OV4k2xAbyttwWUIRIXJ/D1mN93C3LARN5JkpgRbxJUsfbo8IEs43mamYcveH66YLysyc24SSd5PQbVJxjbgZn76TtipUQHVkjT5oS9GAB6QUd5G0P+VV1nsbGMD2KIz/eZ5lG6wz11PSUk6BetY3wf67W+DI2thWHdyvZCaCplwBTigkbieOB88E6un/CE52VXA3T04BF3LJ9nUhsToCC9j5/WVWDa8tt6dB/+A3QOa9awmkDwcwGLVdi9/9vglFTteQfdNJvzbfSaY/jGagWlnvp3vxu2UCFNIYBAJE/L7OaTEuVLOWzU49UGmWRE7aiYuFy56RC0kJ0/6N0f87K6lH6yJ+x+P5w/VEO44iiTEI=
+  - secure: KDTzrNdWGdHgtTFw8kfwYixgfnnI73Y970kSYNPPwetyUlR0oN5mqDCXm8NlWy0AMdlZ3+YQMwHb1ScsuEx/ZSh1U52r49DLzOp5gyi5n3mKKJNFnogKhElxdNHPin5phiTP6Ii6LWptbu/G7H88uSvJlAuurIejzlLzbPTNG3zc49JlIu/z1DUJJwktQ5Knr6Gav4aIQfvSlbCGXHwBnMtHkivdZfxlCNAFp9+54Af2ILF4NsGK3E4Cv6uBP2WvZ8ZRjY33Nw+howQEh8S29rAl3B1qs+OrmdgSDCM5eRCfZSNFTX92frSfNxTbH4dkJuMt2eq3SDIuS09fFfMQyvGZsD1uRC454Zn+vU5xgOic2PMKHuxEuiQpjRQWVZNhkJma8UGB+wYqHn3y+VVxg/8Ifd5t9a6hnAJNWH29Q+ovdtNzXhfH8/BBXcRMCUdgo5NEMNOIPxOM2luxabWmv9E1VxuIVi+38nhWBm3XZajssM1ugIKMvnpfQlB6vWDbrA40Xuj2ZCtomxu9wTMfvv46ra0y6MM1zE5SHjO78PiisRQ2dNwlnRpFzaVeKDUAbwl02WPpbMHFq4cToCW0dkZXCfnkWP9uENJNjBD5Y14t5lXJ7rspj2ddKXwgU0UTp1zi+7WdUyD8rlETu9Z56u79Lf5o1QLPUM0qW8uC7ik=
 branches:
   only:
   - master
