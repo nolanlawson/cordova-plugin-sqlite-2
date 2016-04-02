@@ -34,7 +34,7 @@
   },
   "homepage": "https://github.com/nolanlawson/sqlite-plugin-2#readme",
   "devDependencies": {
-    "appium": "1.5.0",
+    "appium": "1.5.1",
     "bluebird": "3.3.4",
     "browserify": "13.0.0",
     "bundle-collapser": "1.2.1",
