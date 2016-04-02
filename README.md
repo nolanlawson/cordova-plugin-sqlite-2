@@ -96,6 +96,11 @@ Or using WKWebView:
 
     WKWEBVIEW=1 npm run test-ios
 
-To run the sanity tests against PhantomJS (using normal WebSQL):
+Or to use normal WebSQL on either iOS or Android:
+
+    WEBSQL=1 npm run test-ios
+    WEBSQL=1 npm run test-android
+
+Or to run the tests against PhantomJS, using normal WebSQL:
 
     npm run test-phantom

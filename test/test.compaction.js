@@ -40,6 +40,27 @@ adapters.forEach(function (adapter) {
       });
     });
 
+    it.skip('#2913 massively parallel compaction', function () {
+      var db = new PouchDB(dbs.name);
+      var tasks = [];
+      for (var i = 0; i < 30; i++) {
+        tasks.push(i);
+      }
+
+      return PouchDB.utils.Promise.all(tasks.map(function (i) {
+        var doc = {_id: 'doc_' + i};
+        return db.put(doc).then(function () {
+          return db.compact();
+        }).then(function () {
+          return db.get('doc_' + i);
+        }).then(function (doc) {
+          return db.put(doc);
+        }).then(function () {
+          return db.compact();
+        });
+      }));
+    });
+
     it('Compaction document with no revisions to remove', function (done) {
       var db = new PouchDB(dbs.name);
       var doc = {_id: 'foo', value: 'bar'};

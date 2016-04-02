@@ -6,7 +6,9 @@ set -v
 PID=$!
 
 echo "waiting for appium to settle..."
-sleep 5
+while [[ $(curl -sL -w "%{http_code}" http://127.0.0.1:4723/wd/hub/sessions -o /dev/null) != "200" ]]; do
+  sleep 1
+done
 
 node bin/test-appium.js
 EXIT_CODE=$?

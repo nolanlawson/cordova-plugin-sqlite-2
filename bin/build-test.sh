@@ -4,6 +4,7 @@
 : ${WKWEBVIEW:="0"}
 : ${CLEAN:="1"}
 : ${RUN:="1"}
+: ${WEBSQL:="0"}
 
 set -e
 set -v
@@ -33,7 +34,9 @@ if [[ $CLEAN == '1' ]]; then
   else
     $CORDOVA platform add android
   fi
-  $CORDOVA plugin add ..
+  if [[ $WEBSQL == '0' ]]; then
+    $CORDOVA plugin add ..
+  fi
 fi
 
 ZUUL_ROOT="http://127.0.0.1:9494"
