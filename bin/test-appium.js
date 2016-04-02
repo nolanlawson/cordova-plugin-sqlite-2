@@ -6,7 +6,6 @@ var chai = require('chai');
 var chaiAsPromised = require('chai-as-promised');
 var path = require('path');
 var find = require('lodash.find');
-var sauceConnectLauncher = require('sauce-connect-launcher');
 var reporter = require('./test-reporter');
 var request = require('request-promise');
 var denodeify = require('denodeify');
@@ -70,7 +69,6 @@ if (PLATFORM === 'android') {
 
 var driver;
 var browser;
-var sauceConnectProcess;
 var failures = 0;
 var numTries = 0;
 
@@ -152,23 +150,9 @@ function uploadAppToSauceAndGetUrl() {
 }
 
 function sauceSetup() {
-  var options = {
-    username: username,
-    accessKey: accessKey,
-    tunnelIdentifier: process.env['TRAVIS_JOB_NUMBER'] || 'tunnel-' + Date.now()
-  };
-  return new Promise(function (resolve, reject) {
-    sauceConnectLauncher(options, function (err, process) {
-      if (err) {
-        return reject(err);
-      }
-      resolve(process);
-    });
-  }).then(function (process) {
-    sauceConnectProcess = process;
-    driver = wd.promiseChainRemote("localhost", 4445, username, accessKey);
-    return uploadAppToSauceAndGetUrl();
-  }).then(function (url) {
+  driver = wd.promiseChainRemote("localhost", 4445, username, accessKey);
+
+  return uploadAppToSauceAndGetUrl().then(function (url) {
     desired.app = url;
     browser = driver.init(desired);
   });
@@ -183,23 +167,15 @@ function setup() {
   }
 }
 
-function cleanup() {
-  if (sauceConnectProcess) {
-    sauceConnectProcess.close();
-  }
-}
-
 Promise.resolve().then(function () {
   return setup();
 }).then(function () {
   console.log('running tests on platform: ' + PLATFORM);
   return runTest();
 }).then(function () {
-  cleanup();
   console.log('done!');
   process.exit(0);
 }).catch(function (err) {
-  cleanup();
   console.log(err.stack);
   process.exit(1);
 });

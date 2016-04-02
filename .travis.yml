@@ -1,6 +1,8 @@
 os:
 - osx
 sudo: false
+addons:
+  sauce_connect: true
 script: npm run $COMMAND
 before_install:
 - brew update
