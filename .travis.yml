@@ -14,6 +14,7 @@ before_install:
 - nvm install stable
 - nvm use stable
 - npm install
+- SAUCE_CONNECT_DOWNLOAD_ON_INSTALL=true node node_modules/sauce-connect-launcher/scripts/install.js
 env:
   matrix:
   - COMMAND=test-phantom
