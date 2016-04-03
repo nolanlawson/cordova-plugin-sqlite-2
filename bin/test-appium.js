@@ -67,7 +67,7 @@ function configureIos() {
     // via https://wiki.saucelabs.com/display/DOCS/Platform+Configurator
     desired.browserName = '';
     desired.appiumVersion = '1.5.1';
-    desired.deviceName = 'iPhone 5s';
+    desired.deviceName = 'iPhone Simulator';
     desired.deviceOrientation = 'portrait';
   }
 }
