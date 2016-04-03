@@ -27,7 +27,7 @@ import java.util.regex.Pattern;
   */
 public class SQLitePlugin extends CordovaPlugin {
 
-  private static final boolean DEBUG_MODE = true;
+  private static final boolean DEBUG_MODE = false;
 
   private static final String TAG = SQLitePlugin.class.getSimpleName();
 
