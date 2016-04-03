@@ -36,8 +36,6 @@ public class SQLitePlugin extends CordovaPlugin {
 
   private static final Pattern PATTERN_SELECT = Pattern.compile("^\\s*SELECT\\b", Pattern.CASE_INSENSITIVE);
   private static final Pattern PATTERN_INSERT = Pattern.compile("^\\s*INSERT\\b", Pattern.CASE_INSENSITIVE);
-  private static final Pattern PATTERN_START_TXN = Pattern.compile("^\\s*BEGIN\\b", Pattern.CASE_INSENSITIVE);
-  private static final Pattern PATTERN_END_TXN = Pattern.compile("^\\s*END\\b", Pattern.CASE_INSENSITIVE);
 
   private static final Map<String, SQLiteDatabase> DATABASES = new HashMap<String, SQLiteDatabase>();
 
@@ -106,38 +104,27 @@ public class SQLitePlugin extends CordovaPlugin {
   private PluginResult doUpdateInBackgroundAndPossiblyThrow(String sql, String[] bindArgs,
                                                             SQLiteDatabase db) {
     debug("\"run\" query: %s", sql);
-    if (PATTERN_START_TXN.matcher(sql).find()) {
-      debug("type: begin txn");
-      db.beginTransaction();
-      return new PluginResult(EMPTY_ROWS, EMPTY_COLUMNS, 0, 0, null);
-    } else if (PATTERN_END_TXN.matcher(sql).find()) {
-      debug("type: end txn");
-      db.setTransactionSuccessful();
-      db.endTransaction();
-      return new PluginResult(EMPTY_ROWS, EMPTY_COLUMNS, 0, 0, null);
-    } else {
-      SQLiteStatement statement = null;
-      try {
-        statement = db.compileStatement(sql);
-        debug("compiled statement");
-        if (bindArgs != null) {
-          statement.bindAllArgsAsStrings(bindArgs);
-        }
-        debug("bound args");
-        if (PATTERN_INSERT.matcher(sql).find()) {
-          debug("type: insert");
-          long insertId = statement.executeInsert();
-          int rowsAffected = insertId >= 0 ? 1 : 0;
-          return new PluginResult(EMPTY_ROWS, EMPTY_COLUMNS, rowsAffected, insertId, null);
-        } else {
-          debug("type: update/delete/etc.");
-          int rowsAffected = statement.executeUpdateDelete();
-          return new PluginResult(EMPTY_ROWS, EMPTY_COLUMNS, rowsAffected, 0, null);
-        }
-      } finally {
-        if (statement != null) {
-          statement.close();
-        }
+    SQLiteStatement statement = null;
+    try {
+      statement = db.compileStatement(sql);
+      debug("compiled statement");
+      if (bindArgs != null) {
+        statement.bindAllArgsAsStrings(bindArgs);
+      }
+      debug("bound args");
+      if (PATTERN_INSERT.matcher(sql).find()) {
+        debug("type: insert");
+        long insertId = statement.executeInsert();
+        int rowsAffected = insertId >= 0 ? 1 : 0;
+        return new PluginResult(EMPTY_ROWS, EMPTY_COLUMNS, rowsAffected, insertId, null);
+      } else {
+        debug("type: update/delete/etc.");
+        int rowsAffected = statement.executeUpdateDelete();
+        return new PluginResult(EMPTY_ROWS, EMPTY_COLUMNS, rowsAffected, 0, null);
+      }
+    } finally {
+      if (statement != null) {
+        statement.close();
       }
     }
   }
@@ -151,13 +138,9 @@ public class SQLitePlugin extends CordovaPlugin {
       debug("about to do rawQuery()");
       cursor = db.rawQuery(sql, bindArgs);
       debug("did rawQuery()");
-      String[] columnNames = new String[cursor.getColumnCount()];
-      for (int i = 0; i < columnNames.length; i++) {
-        columnNames[i] = cursor.getColumnName(i);
-      }
+      int numColumns = cursor.getColumnCount();
       Object[][] rows = new Object[cursor.getCount()][];
       for (int i = 0; cursor.moveToNext(); i++) {
-        int numColumns = cursor.getColumnCount();
         Object[] columns = new Object[numColumns];
         for (int j = 0; j < numColumns; j++) {
           Object value = null;
@@ -180,6 +163,10 @@ public class SQLitePlugin extends CordovaPlugin {
           columns[j] = value;
         }
         rows[i] = columns;
+      }
+      String[] columnNames = new String[cursor.getColumnCount()];
+      for (int j = 0; j < columnNames.length; j++) {
+        columnNames[j] = cursor.getColumnName(j);
       }
       debug("returning %d rows", rows.length);
       return new PluginResult(rows, columnNames, 0, 0, null);
