@@ -7,7 +7,7 @@
 #import "sqlite3.h"
 
 // Uncomment this to enable debug mode
-// #define DEBUG_MODE = 1;
+#define DEBUG_MODE = 1;
 
 #ifdef DEBUG_MODE
 #   define logDebug(...) NSLog(__VA_ARGS__)
@@ -92,48 +92,61 @@
     return cachedDB;
 }
 
--(void) run: (CDVInvokedUrlCommand*)command
+-(void) exec: (CDVInvokedUrlCommand*)command
 {
-    logDebug(@"run()");
+    logDebug(@"exec()");
     [self.commandDelegate runInBackground:^{
-        [self doOnBackgroundThread: @"run" withCommand: command];
+        [self execOnBackgroundThread: command];
     }];
 }
 
--(void) all: (CDVInvokedUrlCommand*)command
+-(void) execOnBackgroundThread: (CDVInvokedUrlCommand *)command
 {
-    logDebug(@"all()");
-    [self.commandDelegate runInBackground:^{
-        [self doOnBackgroundThread: @"all" withCommand: command];
-    }];
-}
-
--(void) doOnBackgroundThread: (NSString *)type withCommand: (CDVInvokedUrlCommand *)command
-{
-    logDebug(@"doOnBackgroundThread()");
-    logDebug(@"type: %@", type);
+    logDebug(@"execOnBackgroundThread()");
     NSString *dbName = [command.arguments objectAtIndex:0];
-    NSString *sql = [command.arguments objectAtIndex:1];
-    NSArray *sqlArgs = [command.arguments objectAtIndex:2];
-    logDebug(@"dbName: %@", dbName);
-    logDebug(@"sql: %@", sql);
-    logDebug(@"sqlArgs: %@", sqlArgs);
+    NSArray *sqlQueries = [command.arguments objectAtIndex:1];
+    BOOL readOnly = [command.arguments objectAtIndex:2];
+    long length = [sqlQueries count];
     SQLitePluginResult *sqlResult;
+    int i;
+    logDebug(@"dbName: %@", dbName);
     @synchronized(self) {
-        sqlResult = [self executeSql:sql withSqlArgs:sqlArgs withDb: dbName];
-    }
-    NSString *error = sqlResult.error;
-    if (error != nil) {
-        CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:error];
-        [self.commandDelegate sendPluginResult:pluginResult callbackId: command.callbackId];
-    } else {
-        NSArray *columns = sqlResult.columns;
-        NSArray *rows = sqlResult.rows;
-        NSNumber *rowsAffected = sqlResult.rowsAffected;
-        NSNumber *insertId = sqlResult.insertId;
+        NSValue *databasePointer = [self openDatabase:dbName];
+        sqlite3 *db = [databasePointer pointerValue];
+        NSMutableArray *sqlResults = [NSMutableArray arrayWithCapacity:0];
         
-        NSArray *result = @[insertId, rowsAffected, columns, rows];
-        CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsArray:result];
+        // execute queries
+        for (i = 0; i < length; i++) {
+            NSArray *sqlQueryObject = [sqlQueries objectAtIndex:i];
+            NSString *sql = [sqlQueryObject objectAtIndex:0];
+            NSArray *sqlArgs = [sqlQueryObject objectAtIndex:1];
+            logDebug(@"sql: %@", sql);
+            logDebug(@"sqlArgs: %@", sqlArgs);
+            sqlResult = [self executeSql:sql withSqlArgs:sqlArgs withDb: db withReadOnly: readOnly];
+            [sqlResults addObject:sqlResult];
+        }
+        
+        // transform results back into plain arrays
+        NSMutableArray *finalResult = [NSMutableArray arrayWithCapacity:0];
+        for (i = 0; i < length; i++) {
+            sqlResult = [sqlResults objectAtIndex:i];
+            
+            NSString *error = sqlResult.error;
+            if (error != nil) {
+                NSArray *result = @[error, [NSNull null], [NSNull null], [NSNull null], [NSNull null]];
+                [finalResult addObject:result];
+            } else {
+                NSArray *columns = sqlResult.columns;
+                NSArray *rows = sqlResult.rows;
+                NSNumber *rowsAffected = sqlResult.rowsAffected;
+                NSNumber *insertId = sqlResult.insertId;
+                NSArray *result = @[[NSNull null], insertId, rowsAffected, columns, rows];
+                [finalResult addObject:result];
+            }
+        }
+        
+        // send the result back to Cordova
+        CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsArray:finalResult];
         [self.commandDelegate sendPluginResult:pluginResult callbackId: command.callbackId];
     }
     
@@ -154,7 +167,10 @@
     return [NSNull null];
 }
 
--(SQLitePluginResult*) executeSql: (NSString*)sql withSqlArgs: (NSArray*)sqlArgs withDb: (NSString*)dbName {
+-(SQLitePluginResult*) executeSql: (NSString*)sql
+                       withSqlArgs: (NSArray*)sqlArgs
+                       withDb: (sqlite3*)db
+                       withReadOnly: (BOOL)readOnly {
     logDebug(@"executeSql sql: %@", sql);
     NSString *error = nil;
     sqlite3_stmt *statement;
@@ -168,9 +184,6 @@
     
     NSNumber *insertId;
     NSNumber *rowsAffected;
-    
-    NSValue *databasePointer = [self openDatabase:dbName];
-    sqlite3 *db = [databasePointer pointerValue];
     
     // compile the statement, throw an error if necessary
     logDebug(@"sqlite3_prepare_v2");

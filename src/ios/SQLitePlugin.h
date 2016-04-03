@@ -12,7 +12,6 @@ struct sqlite3; // remove dep on sqlite3.h in this .h file
 
 @property (nonatomic, copy) NSMutableDictionary *cachedDatabases;
 
--(void) run: (CDVInvokedUrlCommand *)command;
--(void) all: (CDVInvokedUrlCommand *)command;
+-(void) exec: (CDVInvokedUrlCommand *)command;
 
 @end
