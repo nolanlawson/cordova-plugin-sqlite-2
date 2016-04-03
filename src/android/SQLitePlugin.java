@@ -77,12 +77,12 @@ public class SQLitePlugin extends CordovaPlugin {
     SQLQuery[] queries = execArguments.queries;
     boolean readOnly = execArguments.readOnly;
     PluginResult[] results = new PluginResult[queries.length];
+    SQLiteDatabase db = getDatabase(dbName);
 
     for (int i = 0; i < results.length; i++) {
       SQLQuery sqlQuery = queries[i];
       String sql = sqlQuery.sql;
       String[] bindArgs = sqlQuery.args;
-      SQLiteDatabase db = getDatabase(dbName);
       try {
         if (PATTERN_SELECT.matcher(sql).find()) {
           results[i] = doSelectInBackgroundAndPossiblyThrow(sql, bindArgs, db);
