@@ -1,7 +1,7 @@
 import customOpenDatabase from 'websql/custom';
-import sqlite from './sqlite';
+import SQLiteDatabase from './SQLiteDatabase';
 
-var openDB = customOpenDatabase(sqlite);
+var openDB = customOpenDatabase(SQLiteDatabase);
 
 function SQLitePlugin() {
 }

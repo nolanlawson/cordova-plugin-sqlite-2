@@ -1,6 +1,5 @@
 package com.nolanlawson.cordova.sqlite;
 
-import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteStatement;
@@ -11,7 +10,6 @@ import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaPlugin;
 import org.json.JSONArray;
 import org.json.JSONException;
-import org.json.JSONObject;
 
 import java.io.File;
 import java.util.HashMap;
@@ -29,16 +27,14 @@ import java.util.regex.Pattern;
   */
 public class SQLitePlugin extends CordovaPlugin {
 
-  private static final boolean DEBUG_MODE = false;
+  private static final boolean DEBUG_MODE = true;
 
   private static final String TAG = SQLitePlugin.class.getSimpleName();
-
-  private static final String ACTION_RUN = "run";
-  private static final String ACTION_ALL = "all";
 
   private static final Object[][] EMPTY_ROWS = new Object[][]{};
   private static final String[] EMPTY_COLUMNS = new String[]{};
 
+  private static final Pattern PATTERN_SELECT = Pattern.compile("^\\s*SELECT\\b", Pattern.CASE_INSENSITIVE);
   private static final Pattern PATTERN_INSERT = Pattern.compile("^\\s*INSERT\\b", Pattern.CASE_INSENSITIVE);
   private static final Pattern PATTERN_START_TXN = Pattern.compile("^\\s*BEGIN\\b", Pattern.CASE_INSENSITIVE);
   private static final Pattern PATTERN_END_TXN = Pattern.compile("^\\s*END\\b", Pattern.CASE_INSENSITIVE);
@@ -57,62 +53,58 @@ public class SQLitePlugin extends CordovaPlugin {
   @Override
   public boolean execute(String action, JSONArray args, CallbackContext callbackContext) throws JSONException {
     debug("execute(%s)", action);
-    if (action.equals(ACTION_RUN)) {
-      this.run(args, callbackContext);
-      return true;
-    } else if (action.equals(ACTION_ALL)) {
-      this.all(args, callbackContext);
-      return true;
-    }
-    return false;
+    this.run(args, callbackContext);
+    return true;
   }
 
   private void run(JSONArray args, CallbackContext context) {
-    BackgroundTaskArgs backgroundTaskArgs = new BackgroundTaskArgs(ActionType.RUN, args, context);
+    BackgroundTaskArgs backgroundTaskArgs = new BackgroundTaskArgs(args, context);
     new BackgroundTask(backgroundTaskArgs)
         .executeOnExecutor(SINGLE_EXECUTOR);
   }
 
-  private void all(JSONArray args, CallbackContext context) {
-    BackgroundTaskArgs backgroundTaskArgs = new BackgroundTaskArgs(ActionType.ALL, args, context);
-    new BackgroundTask(backgroundTaskArgs)
-        .executeOnExecutor(SINGLE_EXECUTOR);
-  }
-
-  private PluginResult runInBackground(BackgroundTaskArgs backgroundTaskArgs) {
+  private PluginResult[] runInBackground(BackgroundTaskArgs backgroundTaskArgs) {
     try {
-      return runInBackgroundAndPossiblyThrow(backgroundTaskArgs);
+      ExecArguments execArguments = jsonToExecArguments(backgroundTaskArgs.jsonArray);
+      return execInBackgroundAndReturnResults(execArguments);
     } catch (Throwable e) {
-      return new PluginResult(EMPTY_ROWS, EMPTY_COLUMNS, 0, 0, e);
+      e.printStackTrace(); // should never happen
+      throw new RuntimeException(e);
     }
   }
 
-  private PluginResult runInBackgroundAndPossiblyThrow(BackgroundTaskArgs backgroundTaskArgs) throws JSONException {
-    ActionType actionType = backgroundTaskArgs.actionType;
-    JSONArray args = backgroundTaskArgs.jsonArray;
-    String dbName = args.getString(0);
-    String sql = args.getString(1);
-    String[] bindArgs;
-    if (args.isNull(2)) {
-      bindArgs = null;
-    } else {
-      JSONArray jsonArray = args.getJSONArray(2);
-      int len = jsonArray.length();
-      bindArgs = new String[len];
-      for (int i = 0; i < len; i++) {
-        bindArgs[i] = jsonArray.getString(i);
+  private PluginResult[] execInBackgroundAndReturnResults(ExecArguments execArguments) throws JSONException {
+
+    String dbName = execArguments.dbName;
+    SQLQuery[] queries = execArguments.queries;
+    boolean readOnly = execArguments.readOnly;
+    PluginResult[] results = new PluginResult[queries.length];
+
+    for (int i = 0; i < results.length; i++) {
+      SQLQuery sqlQuery = queries[i];
+      String sql = sqlQuery.sql;
+      String[] bindArgs = sqlQuery.args;
+      SQLiteDatabase db = getDatabase(dbName);
+      try {
+        if (PATTERN_SELECT.matcher(sql).find()) {
+          results[i] = doSelectInBackgroundAndPossiblyThrow(sql, bindArgs, db);
+        } else { // update/insert/delete
+          if (readOnly) {
+            results[i] = new PluginResult(EMPTY_ROWS, EMPTY_COLUMNS, 0, 0, new ReadOnlyException());
+          } else {
+            results[i] = doUpdateInBackgroundAndPossiblyThrow(sql, bindArgs, db);
+          }
+        }
+      } catch (Throwable e) {
+        results[i] = new PluginResult(EMPTY_ROWS, EMPTY_COLUMNS, 0, 0, e);
       }
     }
-    SQLiteDatabase db = getDatabase(dbName);
-    if (actionType == ActionType.ALL) {
-      return doAllTypeInBackgroundAndPossiblyThrow(sql, bindArgs, db);
-    } else { // "run"
-      return doRunTypeInBackgroundAndPossiblyThrow(sql, bindArgs, db);
-    }
+    return results;
   }
 
-  // do a "run" operation
-  private PluginResult doRunTypeInBackgroundAndPossiblyThrow(String sql, String[] bindArgs, SQLiteDatabase db) {
+  // do a update/delete/insert operation
+  private PluginResult doUpdateInBackgroundAndPossiblyThrow(String sql, String[] bindArgs,
+                                                            SQLiteDatabase db) {
     debug("\"run\" query: %s", sql);
     if (PATTERN_START_TXN.matcher(sql).find()) {
       debug("type: begin txn");
@@ -150,8 +142,9 @@ public class SQLitePlugin extends CordovaPlugin {
     }
   }
 
-  // do an "all" operation
-  private PluginResult doAllTypeInBackgroundAndPossiblyThrow(String sql, String[] bindArgs, SQLiteDatabase db) {
+  // do a select operation
+  private PluginResult doSelectInBackgroundAndPossiblyThrow(String sql, String[] bindArgs,
+                                                            SQLiteDatabase db) {
     debug("\"all\" query: %s", sql);
     Cursor cursor = null;
     try {
@@ -223,14 +216,9 @@ public class SQLitePlugin extends CordovaPlugin {
     @Override
     protected Void doInBackground(Void... params) {
       debug("my thread is: %s", Thread.currentThread().getName());
-      PluginResult pluginResult = runInBackground(this.backgroundTaskArgs);
+      PluginResult[] pluginResults = runInBackground(this.backgroundTaskArgs);
 
-      if (pluginResult.error != null) {
-        pluginResult.error.printStackTrace();
-        this.backgroundTaskArgs.callbackContext.error(pluginResult.error.toString());
-      } else {
-        this.backgroundTaskArgs.callbackContext.success(pluginResultToJson(pluginResult));
-      }
+      this.backgroundTaskArgs.callbackContext.success(pluginResultsToJson(pluginResults));
       return null;
     }
   }
@@ -239,6 +227,14 @@ public class SQLitePlugin extends CordovaPlugin {
     if (DEBUG_MODE) {
       Log.d(TAG, String.format(line, format));
     }
+  }
+
+  private static JSONArray pluginResultsToJson(PluginResult[] results) {
+    JSONArray jsonResults = new JSONArray();
+    for (int i = 0; i < results.length; i++) {
+      jsonResults.put(pluginResultToJson(results[i]));
+    }
+    return jsonResults;
   }
 
   private static JSONArray pluginResultToJson(PluginResult result) {
@@ -257,12 +253,42 @@ public class SQLitePlugin extends CordovaPlugin {
       rowsJsonArray.put(columnsJsonArray);
     }
     JSONArray jsonResult = new JSONArray();
+    if (result.error != null) {
+      jsonResult.put(result.error.getMessage());
+    } else {
+      jsonResult.put(null);
+    }
     jsonResult.put(result.insertId);
     jsonResult.put(result.rowsAffected);
     jsonResult.put(columnNamesJsonArray);
     jsonResult.put(rowsJsonArray);
     debug("returning json: %s", jsonResult);
     return jsonResult;
+  }
+
+  private static ExecArguments jsonToExecArguments(JSONArray args) throws JSONException{
+    String dbName = args.getString(0);
+    JSONArray queries = args.getJSONArray(1);
+    boolean readOnly = args.getBoolean(2);
+
+    int len = queries.length();
+    SQLQuery[] sqlQueries = new SQLQuery[len];
+
+    for (int i = 0; i < len; i++) {
+      JSONArray queryArray = queries.getJSONArray(i);
+      String sql = queryArray.getString(0);
+      JSONArray sqlArgsArray = queryArray.getJSONArray(1);
+      int sqlArgsArrayLen = sqlArgsArray.length();
+      String[] sqlArgs = new String[sqlArgsArrayLen];
+
+      for (int j = 0; j < sqlArgsArrayLen; j++) {
+        sqlArgs[j] = sqlArgsArray.getString(j);
+      }
+
+      sqlQueries[i] = new SQLQuery(sql, sqlArgs);
+    }
+
+    return new ExecArguments(dbName, sqlQueries, readOnly);
   }
 
   private static class PluginResult {
@@ -282,20 +308,41 @@ public class SQLitePlugin extends CordovaPlugin {
     }
   }
 
-  private enum ActionType {
-    RUN,
-    ALL
-  }
-
   private static class BackgroundTaskArgs {
-    public final ActionType actionType;
     public final JSONArray jsonArray;
     public final CallbackContext callbackContext;
 
-    public BackgroundTaskArgs(ActionType actionType, JSONArray jsonArray, CallbackContext callbackContext) {
-      this.actionType = actionType;
+    public BackgroundTaskArgs(JSONArray jsonArray, CallbackContext callbackContext) {
       this.jsonArray = jsonArray;
       this.callbackContext = callbackContext;
+    }
+  }
+
+  private static class ExecArguments {
+    public final String dbName;
+    public final SQLQuery[] queries;
+    public final boolean readOnly;
+
+    public ExecArguments(String dbName, SQLQuery[] queries, boolean readOnly) {
+      this.dbName = dbName;
+      this.queries = queries;
+      this.readOnly = readOnly;
+    }
+  }
+
+  private static class SQLQuery {
+    public final String sql;
+    public final String[] args;
+
+    public SQLQuery(String sql, String[] args) {
+      this.sql = sql;
+      this.args = args;
+    }
+  }
+
+  private static class ReadOnlyException extends Exception {
+    public ReadOnlyException() {
+      super("could not prepare statement (23 not authorized)");
     }
   }
 

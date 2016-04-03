@@ -834,3 +834,952 @@ describe('dedicated db test suite - actual DB', function () {
   });
 
 });
+
+describe('dedicated db test suite - actual DB', function () {
+
+  this.timeout(60000);
+
+  var db;
+
+  beforeEach(function () {
+    db = openDatabase('testdb', '1.0', 'yolo', 100000);
+  });
+
+  afterEach(function () {
+    return new Promise(function (resolve, reject) {
+      db.transaction(function (txn) {
+        txn.executeSql('DROP TABLE IF EXISTS table1');
+        txn.executeSql('DROP TABLE IF EXISTS table2');
+        txn.executeSql('DROP TABLE IF EXISTS table3');
+      }, reject, resolve);
+    }).then(function () {
+      db = null;
+    });
+  });
+
+
+  it('stores data between two DBs', function () {
+    var db1 = openDatabase('testdb', '1.0', 'yolo', 100000);
+    var db2 = openDatabase('testdb', '1.0', 'yolo', 100000);
+
+    return Promise.resolve().then(function () {
+      var sql = 'CREATE TABLE table1 (text1 string, text2 string)';
+      return transactionPromise(db1, sql);
+    }).then(function () {
+      var sql = 'INSERT INTO table1 VALUES ("foo", "bar")';
+      return transactionPromise(db1, sql);
+    }).then(function () {
+      var sql = 'SELECT * from table1;';
+      return transactionPromise(db1, sql);
+    }).then(function (res) {
+      assert.equal(getInsertId(res), void 0, 'no insertId');
+      assert.equal(res.rowsAffected, 0, 'rowsAffected');
+      assert.equal(res.rows.length, 1, 'rows.length');
+      assert.deepEqual(res.rows.item(0), {
+        text1: 'foo',
+        text2: 'bar'
+      });
+      var sql = 'SELECT * from table1;';
+      return transactionPromise(db2, sql);
+    }).then(function (res) {
+      assert.equal(getInsertId(res), void 0, 'no insertId');
+      assert.equal(res.rowsAffected, 0, 'rowsAffected');
+      assert.equal(res.rows.length, 1, 'rows.length');
+      assert.deepEqual(res.rows.item(0), {
+        text1: 'foo',
+        text2: 'bar'
+      });
+    });
+  });
+});
+
+describe('advanced test suite - actual DB', function () {
+
+  this.timeout(60000);
+
+  var db;
+
+  beforeEach(function () {
+    db = openDatabase('testdb', '1.0', 'yolo', 100000);
+  });
+
+  afterEach(function () {
+    return new Promise(function (resolve, reject) {
+      db.transaction(function (txn) {
+        txn.executeSql('DROP TABLE IF EXISTS table1');
+        txn.executeSql('DROP TABLE IF EXISTS table2');
+        txn.executeSql('DROP TABLE IF EXISTS table3');
+        txn.executeSql('DROP TABLE IF EXISTS foo');
+        txn.executeSql('DROP TABLE IF EXISTS yolo');
+      }, reject, resolve);
+    }).then(function () {
+      db = null;
+    });
+  });
+
+  function rowsToJson(res) {
+    var output = [];
+    for (var i = 0; i < res.rows.length; i++) {
+      output.push(res.rows.item(i));
+    }
+    return JSON.parse(JSON.stringify(output));
+  }
+
+  it('handles errors and callback correctly 0', function () {
+    var called = [];
+
+    return new Promise(function (resolve, reject) {
+      db.transaction(function (txn) {
+        txn.executeSql('CREATE TABLE foo (bar text);', [], function () {
+          called.push('a');
+        });
+        txn.executeSql('INSERT INTO foo VALUES ("baz")', [], function () {
+          called.push('b');
+        });
+      }, function (err) {
+        console.log(err);
+        reject(err);
+      }, resolve);
+    }).then(function () {
+      assert.deepEqual(called, ["a", "b"]);
+    });
+  });
+
+  it('handles errors and callback correctly 1', function () {
+    var called = [];
+
+    return new Promise(function (resolve, reject) {
+      db.transaction(function (txn) {
+        txn.executeSql('CREATE TABLE foo (bar text);', [], function () {
+          called.push('a');
+        });
+        txn.executeSql('INSERT INTO foo VALUES ("baz")', [], function () {
+          called.push('b');
+          txn.executeSql('INSERT INTO yolo VALUES ("hey")', [], function () {
+            called.push('z');
+          }, function () {
+            called.push('c');
+            txn.executeSql('INSERT INTO foo VALUES ("baz")', [], function () {
+              called.push('f');
+            });
+          });
+          txn.executeSql('INSERT INTO foo VALUES ("haha")', [], null, function () {
+            called.push('e');
+          });
+        });
+      }, function (err) {
+        console.log(err);
+        reject(err);
+      }, resolve);
+    }).then(function () {
+      assert.deepEqual(called, ["a", "b", "c", "f"]);
+    });
+  });
+
+  it('handles errors and callback correctly 2', function () {
+    var called = [];
+
+    return new Promise(function (resolve, reject) {
+      db.transaction(function (txn) {
+        txn.executeSql('CREATE TABLE table1 (bar text);', [], function () {
+          called.push('a');
+        });
+        txn.executeSql('INSERT INTO table1 VALUES ("buzz")', [], function () {
+          called.push('b');
+          txn.executeSql('SELECT * FROM table1', [], function (txn, res) {
+            called.push({'a': rowsToJson(res)});
+          });
+          txn.executeSql('INSERT INTO table1 VALUES ("hey")', [], null, function () {
+            called.push('c');
+            txn.executeSql('SELECT * FROM table1', [], function (txn, res) {
+              called.push({'d': rowsToJson(res)});
+            });
+            txn.executeSql('INSERT INTO table1 VALUES ("baz")', [], function () {
+              called.push('f');
+              txn.executeSql('SELECT * FROM table1', [], function (txn, res) {
+                called.push({'f': rowsToJson(res)});
+              });
+            });
+            txn.executeSql('SELECT * FROM table1', [], function (txn, res) {
+              called.push({'e': rowsToJson(res)});
+            });
+          });
+          txn.executeSql('SELECT * FROM table1', [], function (txn, res) {
+            called.push({'b': rowsToJson(res)});
+          });
+          txn.executeSql('INSERT INTO table1 VALUES ("haha")', [], null, function () {
+            called.push('e');
+            txn.executeSql('SELECT * FROM table1', [], function (txn, res) {
+              called.push({'d': rowsToJson(res)});
+            });
+          });
+          txn.executeSql('SELECT * FROM table1', [], function (txn, res) {
+            called.push({'c': rowsToJson(res)});
+          });
+        });
+      }, function (err) {
+        console.log(err);
+        reject(err);
+      }, resolve);
+    }).then(function () {
+      assert.deepEqual(called, [
+        "a",
+        "b",
+        {
+          "a": [
+            {"bar": "buzz"}
+          ]
+        },
+        {
+          "b": [
+            {"bar": "buzz"},
+            {"bar": "hey"}
+          ]
+        },
+        {
+          "c": [
+            {"bar": "buzz"},
+            {"bar": "hey"},
+            {"bar": "haha"}
+          ]
+        }
+      ]);
+    });
+  });
+
+  it('handles errors and callback correctly 3', function () {
+    var called = [];
+
+    return new Promise(function (resolve, reject) {
+      db.transaction(function (txn) {
+        txn.executeSql('CREATE TABLE table1 (bar text);', [], function () {
+          called.push('a');
+        });
+        txn.executeSql('INSERT INTO table1 VALUES ("buzz")', [], function () {
+          called.push('b');
+          txn.executeSql('SELECT * FROM table1', [], function (txn, res) {
+            called.push({'a': rowsToJson(res)});
+          });
+          txn.executeSql('INSERT INTO yolo VALUES ("hey")', [], null, function () {
+            called.push('c');
+            txn.executeSql('SELECT * FROM table1', [], function (txn, res) {
+              called.push({'d': rowsToJson(res)});
+            });
+            txn.executeSql('INSERT INTO table1 VALUES ("baz")', [], function () {
+              called.push('f');
+              txn.executeSql('SELECT * FROM table1', [], function (txn, res) {
+                called.push({'f': rowsToJson(res)});
+              });
+            });
+            txn.executeSql('SELECT * FROM table1', [], function (txn, res) {
+              called.push({'e': rowsToJson(res)});
+            });
+          });
+          txn.executeSql('SELECT * FROM table1', [], function (txn, res) {
+            called.push({'b': rowsToJson(res)});
+          });
+          txn.executeSql('INSERT INTO table1 VALUES ("haha")', [], null, function () {
+            called.push('e');
+            txn.executeSql('SELECT * FROM table1', [], function (txn, res) {
+              called.push({'d': rowsToJson(res)});
+            });
+          });
+          txn.executeSql('SELECT * FROM table1', [], function (txn, res) {
+            called.push({'c': rowsToJson(res)});
+          });
+        });
+      }, function (err) {
+        console.log(err);
+        reject(err);
+      }, resolve);
+    }).then(function () {
+      assert.deepEqual(called, [
+          "a",
+          "b",
+          {
+            "a": [{"bar": "buzz"}]
+          },
+          "c",
+          {
+            "b": [{"bar": "buzz"}]
+          },
+          {
+            "c": [{"bar": "buzz"}, {"bar": "haha"}
+            ]
+          },
+          {
+            "d": [{"bar": "buzz"}, {"bar": "haha"}]
+          },
+          "f",
+          {
+            "e": [{"bar": "buzz"}, {"bar": "haha"}, {"bar": "baz"}]
+          },
+          {
+            "f": [{"bar": "buzz"}, {"bar": "haha"}, {"bar": "baz"}]
+          }
+        ]
+      );
+    });
+  });
+
+  it('handles errors and callback correctly 4', function () {
+    var called = [];
+
+    return new Promise(function (resolve, reject) {
+      db.transaction(function (txn) {
+        txn.executeSql('CREATE TABLE table1 (bar text);', [], function () {
+          called.push('a');
+          txn.executeSql('SELECT * FROM table1', [], function (txn, res) {
+            called.push({'1': rowsToJson(res)});
+          });
+        });
+        txn.executeSql('INSERT INTO table1 VALUES ("a")', [], function () {
+          called.push('b');
+          txn.executeSql('SELECT * FROM table1', [], function (txn, res) {
+            called.push({'2': rowsToJson(res)});
+          });
+        });
+        txn.executeSql('INSERT INTO table1 VALUES ("c")', [], function () {
+          called.push('c');
+          txn.executeSql('SELECT * FROM table1', [], function (txn, res) {
+            called.push({'3': rowsToJson(res)});
+          });
+        });
+        txn.executeSql('DROP TABLE table1', [], function () {
+          called.push('d');
+        });
+        txn.executeSql('CREATE TABLE table1 (bar text);', [], function () {
+          called.push('e');
+          txn.executeSql('SELECT * FROM table1', [], function (txn, res) {
+            called.push({'4': rowsToJson(res)});
+          });
+        });
+
+      }, function (err) {
+        console.log(err);
+        reject(err);
+      }, resolve);
+    }).then(function () {
+      assert.deepEqual(called, ["a", "b", "c", "d", "e", {"1": []}, {"2": []}, {"3": []}, {"4": []}]
+      );
+    });
+  });
+
+  it('handles errors and callback correctly 5', function () {
+    var called = [];
+
+    return new Promise(function (resolve, reject) {
+      db.transaction(function (txn) {
+        txn.executeSql('CREATE TABLE table1 (bar text);', [], function () {
+          called.push('a');
+          txn.executeSql('SELECT * FROM table1', [], function (txn, res) {
+            called.push({'1': rowsToJson(res)});
+          });
+        });
+        txn.executeSql('SELECT * FROM table1', [], function (txn, res) {
+          called.push({'z': rowsToJson(res)});
+        });
+        txn.executeSql('INSERT INTO table1 VALUES ("a")', [], function () {
+          called.push('b');
+          txn.executeSql('SELECT * FROM table1', [], function (txn, res) {
+            called.push({'2': rowsToJson(res)});
+          });
+        });
+        txn.executeSql('SELECT * FROM table1', [], function (txn, res) {
+          called.push({'x': rowsToJson(res)});
+        });
+        txn.executeSql('INSERT INTO table1 VALUES ("b")', [], function () {
+          called.push('c');
+          txn.executeSql('SELECT * FROM table1', [], function (txn, res) {
+            called.push({'3': rowsToJson(res)});
+          });
+        });
+        txn.executeSql('SELECT * FROM table1', [], function (txn, res) {
+          called.push({'y': rowsToJson(res)});
+        });
+        txn.executeSql('DROP TABLE table1', [], function () {
+          called.push('d');
+        });
+        txn.executeSql('SELECT * FROM table1', [], function () {
+          called.push('should not happen');
+        }, function () {
+          called.push('expected error');
+        });
+        txn.executeSql('CREATE TABLE table1 (bar text);', [], function () {
+          called.push('e');
+          txn.executeSql('INSERT INTO table1 VALUES ("c")', [], function () {
+            called.push('w');
+            txn.executeSql('SELECT * FROM table1', [], function (txn, res) {
+              called.push({'v': rowsToJson(res)});
+            });
+          });
+          txn.executeSql('SELECT * FROM table1', [], function (txn, res) {
+            called.push({'4': rowsToJson(res)});
+          });
+        });
+        txn.executeSql('SELECT * FROM table1', [], function (txn, res) {
+          called.push({'x': rowsToJson(res)});
+        });
+
+      }, function (err) {
+        console.log(err);
+        reject(err);
+      }, resolve);
+    }).then(function () {
+      assert.deepEqual(called, [
+          "a",
+          {"z": []},
+          "b",
+          {"x": [{"bar": "a"}]},
+          "c",
+          {"y": [{"bar": "a"}, {"bar": "b"}]},
+          "d",
+          "expected error",
+          "e",
+          {"x": []},
+          {"1": []},
+          {"2": []},
+          {"3": []},
+          "w",
+          {"4": [{"bar": "c"}]},
+          {"v": [{"bar": "c"}]}
+        ]
+      );
+    });
+  });
+
+  it('rolls back after an error 1', function () {
+    var called = [];
+
+    return new Promise(function (resolve, reject) {
+      db.transaction(function (txn) {
+        txn.executeSql('CREATE TABLE table1 (foo text)', [], function () {
+          called.push('a');
+          txn.executeSql('INSERT INTO table1 VALUES ("a")', [], function () {
+            called.push('b');
+          });
+        });
+      }, reject, resolve);
+    }).then(function () {
+      return new Promise(function (resolve, reject) {
+        db.transaction(function (txn) {
+          txn.executeSql('DELETE FROM table1', [], function () {
+            called.push('c');
+          });
+          txn.executeSql('SELECT * FROM notexist', function () {
+            called.push('z');
+          });
+        }, resolve, reject);
+      });
+    }).then(function () {
+      return new Promise(function (resolve, reject) {
+        db.transaction(function (txn) {
+          txn.executeSql('SELECT * FROM table1', [], function (tx, res) {
+            called.push(rowsToJson(res));
+          });
+        }, reject, resolve);
+      });
+    }).then(function () {
+      assert.deepEqual(called, ["a", "b", "c", [{"foo": "a"}]]);
+    });
+  });
+
+  it('rolls back after an error 2', function () {
+    var called = [];
+
+    return new Promise(function (resolve, reject) {
+      db.transaction(function (txn) {
+        txn.executeSql('CREATE TABLE table1 (foo text)', [], function () {
+          called.push('a');
+          txn.executeSql('INSERT INTO table1 VALUES ("a")', [], function () {
+            called.push('b');
+          });
+        });
+      }, reject, resolve);
+    }).then(function () {
+      return new Promise(function (resolve, reject) {
+        db.transaction(function (txn) {
+          txn.executeSql('DELETE FROM table1', [], function () {
+            called.push('c');
+            txn.executeSql('SELECT * FROM notexist', function () {
+              called.push('z');
+            });
+          });
+        }, resolve, reject);
+      });
+    }).then(function () {
+      return new Promise(function (resolve, reject) {
+        db.transaction(function (txn) {
+          txn.executeSql('SELECT * FROM table1', [], function (tx, res) {
+            called.push(rowsToJson(res));
+          });
+        }, reject, resolve);
+      });
+    }).then(function () {
+      assert.deepEqual(called, ["a", "b", "c", [{"foo": "a"}]]);
+    });
+  });
+
+  it('rolls back after an error 3', function () {
+    var called = [];
+
+    return new Promise(function (resolve, reject) {
+      db.transaction(function (txn) {
+        txn.executeSql('CREATE TABLE table1 (foo text)', [], function () {
+          called.push('a');
+          txn.executeSql('INSERT INTO table1 VALUES ("a")', [], function () {
+            called.push('b');
+          });
+        });
+      }, reject, resolve);
+    }).then(function () {
+      return new Promise(function (resolve, reject) {
+        db.transaction(function (txn) {
+          txn.executeSql('INSERT INTO table1 VALUES ("y")', [], function () {
+            called.push('d');
+          });
+          txn.executeSql('INSERT INTO table1 VALUES ("z")', [], function () {
+            called.push('c');
+            txn.executeSql('INSERT INTO table1 VALUES ("v")', [], function () {
+              called.push('f');
+            });
+            txn.executeSql('SELECT * FROM notexist', function () {
+              called.push('z');
+            });
+            txn.executeSql('INSERT INTO table1 VALUES ("u")', [], function () {
+              called.push('g');
+            });
+          });
+          txn.executeSql('INSERT INTO table1 VALUES ("w")', [], function () {
+            called.push('e');
+          });
+        }, resolve, reject);
+      });
+    }).then(function () {
+      return new Promise(function (resolve, reject) {
+        db.transaction(function (txn) {
+          txn.executeSql('SELECT * FROM table1', [], function (tx, res) {
+            called.push(rowsToJson(res));
+          });
+        }, reject, resolve);
+      });
+    }).then(function () {
+      assert.deepEqual(called, ["a", "b", "d", "c", "e", "f", [{"foo": "a"}]]);
+    });
+  });
+
+  it('rolls back after an error 4', function () {
+    var called = [];
+
+    return new Promise(function (resolve, reject) {
+      db.transaction(function (txn) {
+        txn.executeSql('CREATE TABLE table1 (foo text)', [], function () {
+          called.push('a');
+          txn.executeSql('INSERT INTO table1 VALUES ("a")', [], function () {
+            called.push('b');
+          });
+        });
+      }, reject, resolve);
+    }).then(function () {
+      return new Promise(function (resolve, reject) {
+        db.readTransaction(function (txn) {
+          txn.executeSql('SELECT * FROM table1', [], function () {
+            called.push('d');
+          });
+          // readTransaction throws an error here
+          txn.executeSql('INSERT INTO table1 VALUES ("z")', [], function () {
+            called.push('c');
+          });
+          txn.executeSql('SELECT * FROM table1', [], function () {
+            called.push('e');
+          });
+        }, resolve, reject);
+      });
+    }).then(function () {
+      return new Promise(function (resolve, reject) {
+        db.transaction(function (txn) {
+          txn.executeSql('SELECT * FROM table1', [], function (tx, res) {
+            called.push(rowsToJson(res));
+          });
+        }, reject, resolve);
+      });
+    }).then(function () {
+      assert.deepEqual(called, ["a", "b", "d", [{"foo": "a"}]]);
+    });
+  });
+
+  it('rolls back after an error 5', function () {
+    var called = [];
+
+    return new Promise(function (resolve, reject) {
+      db.transaction(function (txn) {
+        txn.executeSql('CREATE TABLE table1 (foo text)', [], function () {
+          called.push('a');
+          txn.executeSql('INSERT INTO table1 VALUES ("a")', [], function () {
+            called.push('b');
+          });
+        });
+      }, reject, resolve);
+    }).then(function () {
+      return new Promise(function (resolve, reject) {
+        db.readTransaction(function (txn) {
+          txn.executeSql('SELECT * FROM table1', [], function () {
+            called.push('d');
+          });
+          txn.executeSql('SELECT * FROM table1', [], function () {
+            called.push('e');
+            txn.executeSql('SELECT * FROM table1', [], function () {
+              called.push('f');
+              // readTransaction throws an error here
+              txn.executeSql('INSERT INTO table1 VALUES ("z")', [], function () {
+                called.push('c');
+              });
+            });
+          });
+        }, resolve, reject);
+      });
+    }).then(function () {
+      return new Promise(function (resolve, reject) {
+        db.transaction(function (txn) {
+          txn.executeSql('SELECT * FROM table1', [], function (tx, res) {
+            called.push(rowsToJson(res));
+          });
+        }, reject, resolve);
+      });
+    }).then(function () {
+      assert.deepEqual(called, ["a", "b", "d", "e", "f", [{"foo": "a"}]]);
+    });
+  });
+
+  it('does not roll back if caught 1', function () {
+    var called = [];
+
+    return new Promise(function (resolve, reject) {
+      db.transaction(function (txn) {
+        txn.executeSql('CREATE TABLE table1 (foo text)', [], function () {
+          called.push('a');
+          txn.executeSql('INSERT INTO table1 VALUES ("a")', [], function () {
+            called.push('b');
+          });
+        });
+      }, reject, resolve);
+    }).then(function () {
+      return new Promise(function (resolve, reject) {
+        db.readTransaction(function (txn) {
+          txn.executeSql('SELECT * FROM table1', [], function () {
+            called.push('d');
+          });
+          // readTransaction throws an error here
+          txn.executeSql('INSERT INTO table1 VALUES ("z")', [], function () {
+            called.push('c');
+          }, function () {
+            called.push('g');
+          });
+          txn.executeSql('SELECT * FROM table1', [], function () {
+            called.push('e');
+          });
+        }, reject, resolve);
+      });
+    }).then(function () {
+      return new Promise(function (resolve, reject) {
+        db.transaction(function (txn) {
+          txn.executeSql('SELECT * FROM table1', [], function (tx, res) {
+            called.push(rowsToJson(res));
+          });
+        }, reject, resolve);
+      });
+    }).then(function () {
+      assert.deepEqual(called, ["a", "b", "d", "g", "e", [{"foo": "a"}]]);
+    });
+  });
+
+  it('does not roll back if caught 2', function () {
+    var called = [];
+
+    return new Promise(function (resolve, reject) {
+      db.transaction(function (txn) {
+        txn.executeSql('CREATE TABLE table1 (foo text)', [], function () {
+          called.push('a');
+          txn.executeSql('INSERT INTO table1 VALUES ("a")', [], function () {
+            called.push('b');
+          });
+        });
+      }, reject, resolve);
+    }).then(function () {
+      return new Promise(function (resolve, reject) {
+        db.transaction(function (txn) {
+          txn.executeSql('INSERT INTO table1 VALUES ("n")', [], function () {
+            called.push('d');
+          });
+          txn.executeSql('INSERT INTO yolo VALUES ("z")', [], function () {
+            called.push('c');
+          }, function () {
+            called.push('g');
+            txn.executeSql('INSERT INTO table1 VALUES ("p")', [], function () {
+              called.push('f');
+            });
+          });
+          txn.executeSql('INSERT INTO table1 VALUES ("o")', [], function () {
+            called.push('e');
+          });
+        }, reject, resolve);
+      });
+    }).then(function () {
+      return new Promise(function (resolve, reject) {
+        db.transaction(function (txn) {
+          txn.executeSql('SELECT * FROM table1', [], function (tx, res) {
+            called.push(rowsToJson(res));
+          });
+        }, reject, resolve);
+      });
+    }).then(function () {
+      assert.deepEqual(called, [
+        "a", "b", "d", "g", "e", "f", [{"foo": "a"},
+          {"foo": "n"}, {"foo": "o"}, {"foo": "p"}]]);
+    });
+  });
+
+  it('does not roll back if caught 3', function () {
+    var called = [];
+
+    return new Promise(function (resolve, reject) {
+      db.transaction(function (txn) {
+        txn.executeSql('CREATE TABLE table1 (foo text)', [], function () {
+          called.push('a');
+          txn.executeSql('INSERT INTO table1 VALUES ("a")', [], function () {
+            called.push('b');
+          });
+        });
+      }, reject, resolve);
+    }).then(function () {
+      return new Promise(function (resolve, reject) {
+        db.transaction(function (txn) {
+          txn.executeSql('INSERT INTO table1 VALUES ("n")', [], function () {
+            called.push('d');
+          });
+          txn.executeSql('INSERT INTO yolo VALUES ("z")', [], function () {
+            called.push('c');
+          }, function () {
+            called.push('g');
+            txn.executeSql('INSERT INTO yolo VALUES ("p")', [], function () {
+              called.push('f');
+            }, function () {
+              called.push('h');
+              txn.executeSql('INSERT INTO table1 VALUES ("x")', [], function () {
+                called.push('i');
+              });
+              txn.executeSql('INSERT INTO table1 VALUES ("y")', [], function () {
+                called.push('j');
+              });
+              txn.executeSql('INSERT INTO table1 VALUES ("z")', [], function () {
+                called.push('k');
+              });
+            });
+          });
+          txn.executeSql('INSERT INTO table1 VALUES ("o")', [], function () {
+            called.push('e');
+          });
+        }, reject, resolve);
+      });
+    }).then(function () {
+      return new Promise(function (resolve, reject) {
+        db.transaction(function (txn) {
+          txn.executeSql('SELECT * FROM table1', [], function (tx, res) {
+            called.push(rowsToJson(res));
+          });
+        }, reject, resolve);
+      });
+    }).then(function () {
+      assert.deepEqual(called, [
+        "a", "b", "d", "g", "e", "h", "i", "j", "k",
+        [{"foo": "a"}, {"foo": "n"}, {"foo": "o"}, {"foo": "x"},
+          {"foo": "y"}, {"foo": "z"}]]);
+    });
+  });
+
+  it('query order matters 1', function () {
+    var called = [];
+
+    return new Promise(function (resolve, reject) {
+      db.transaction(function (txn) {
+        txn.executeSql('INSERT INTO table1 VALUES ("x")', [], function () {
+          called.push('x');
+        }, function () {
+          called.push('y');
+        });
+        txn.executeSql('CREATE TABLE table1 (foo text)', [], function () {
+          called.push('a');
+        });
+        txn.executeSql('INSERT INTO table1 VALUES ("y")', [], function () {
+          called.push('z');
+        }, function () {
+          called.push('w');
+        });
+      }, reject, resolve);
+    }).then(function () {
+      return new Promise(function (resolve, reject) {
+        db.transaction(function (txn) {
+          txn.executeSql('SELECT * FROM table1', [], function (tx, res) {
+            called.push(rowsToJson(res));
+          });
+        }, reject, resolve);
+      });
+    }).then(function () {
+      assert.deepEqual(called, ["y", "a", "z", [{"foo": "y"}]]);
+    });
+  });
+
+  it('query order matters 2', function () {
+    var called = [];
+
+    return new Promise(function (resolve, reject) {
+      db.transaction(function (txn) {
+        txn.executeSql('INSERT INTO table1 VALUES ("x")', [], function () {
+          called.push('x');
+        }, function () {
+          called.push('y');
+        });
+        txn.executeSql('CREATE TABLE table1 (foo text)', [], function () {
+          called.push('a');
+          txn.executeSql('DELETE FROM table1 WHERE foo="y"', [], function () {
+            called.push('c');
+          });
+        });
+        txn.executeSql('INSERT INTO table1 VALUES ("y")', [], function () {
+          called.push('z');
+        }, function () {
+          called.push('w');
+        });
+      }, reject, resolve);
+    }).then(function () {
+      return new Promise(function (resolve, reject) {
+        db.transaction(function (txn) {
+          txn.executeSql('SELECT * FROM table1', [], function (tx, res) {
+            called.push(rowsToJson(res));
+          });
+        }, reject, resolve);
+      });
+    }).then(function () {
+      assert.deepEqual(called, ["y", "a", "z", "c", []]);
+    });
+  });
+
+  it('query order matters 3', function () {
+    var called = [];
+
+    return new Promise(function (resolve, reject) {
+      db.transaction(function (txn) {
+        txn.executeSql('CREATE TABLE table1 (foo text)', [], function () {
+          called.push('a');
+        });
+        txn.executeSql('INSERT INTO table1 VALUES ("y")', [], function () {
+          called.push('b');
+        });
+        txn.executeSql('DELETE FROM table1 WHERE foo="y"', [], function () {
+          called.push('c');
+        });
+      }, reject, resolve);
+    }).then(function () {
+      return new Promise(function (resolve, reject) {
+        db.transaction(function (txn) {
+          txn.executeSql('SELECT * FROM table1', [], function (tx, res) {
+            called.push(rowsToJson(res));
+          });
+        }, reject, resolve);
+      });
+    }).then(function () {
+      assert.deepEqual(called, ["a", "b", "c", []]);
+    });
+  });
+
+  it('query order matters 4', function () {
+    var called = [];
+
+    return new Promise(function (resolve, reject) {
+      db.transaction(function (txn) {
+        txn.executeSql('CREATE TABLE table1 (foo text)', [], function () {
+          called.push('a');
+          txn.executeSql('DELETE FROM table1 WHERE foo="y"', [], function () {
+            called.push('c');
+          });
+        });
+        txn.executeSql('INSERT INTO table1 VALUES ("y")', [], function () {
+          called.push('b');
+        });
+      }, reject, resolve);
+    }).then(function () {
+      return new Promise(function (resolve, reject) {
+        db.transaction(function (txn) {
+          txn.executeSql('SELECT * FROM table1', [], function (tx, res) {
+            called.push(rowsToJson(res));
+          });
+        }, reject, resolve);
+      });
+    }).then(function () {
+      assert.deepEqual(called, ["a", "b", "c", []]);
+    });
+  });
+
+  it('query order matters 5', function () {
+    var called = [];
+
+    return new Promise(function (resolve, reject) {
+      db.transaction(function (txn) {
+        txn.executeSql('CREATE TABLE table1 (foo text)', [], function () {
+          called.push('a');
+        });
+        txn.executeSql('DELETE FROM table1 WHERE foo="y"', [], function () {
+          called.push('c');
+        });
+        txn.executeSql('INSERT INTO table1 VALUES ("y")', [], function () {
+          called.push('b');
+        });
+      }, reject, resolve);
+    }).then(function () {
+      return new Promise(function (resolve, reject) {
+        db.transaction(function (txn) {
+          txn.executeSql('SELECT * FROM table1', [], function (tx, res) {
+            called.push(rowsToJson(res));
+          });
+        }, reject, resolve);
+      });
+    }).then(function () {
+      assert.deepEqual(called, ["a", "c", "b", [{"foo": "y"}]]);
+    });
+  });
+
+  it('query order matters 6', function () {
+    var called = [];
+
+    return new Promise(function (resolve, reject) {
+      db.transaction(function (txn) {
+        txn.executeSql('CREATE TABLE table1 (foo text)', [], function () {
+          called.push('a');
+          txn.executeSql('DROP TABLE table1;', [], function () {
+            called.push('b');
+          });
+          txn.executeSql('CREATE TABLE table1 (foo text);', [], function () {
+            called.push('c');
+          });
+          txn.executeSql('INSERT INTO table1 VALUES ("x")', [], function () {
+            called.push('d');
+          });
+        });
+        txn.executeSql('INSERT INTO table1 VALUES ("y")', [], function () {
+          called.push('e');
+        });
+      }, reject, resolve);
+    }).then(function () {
+      return new Promise(function (resolve, reject) {
+        db.transaction(function (txn) {
+          txn.executeSql('SELECT * FROM table1', [], function (tx, res) {
+            called.push(rowsToJson(res));
+          });
+        }, reject, resolve);
+      });
+    }).then(function () {
+      assert.deepEqual(called, ["a", "e", "b", "c", "d", [{"foo": "x"}]]);
+    });
+  });
+
+});
