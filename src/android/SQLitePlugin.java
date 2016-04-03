@@ -164,10 +164,7 @@ public class SQLitePlugin extends CordovaPlugin {
         }
         rows[i] = columns;
       }
-      String[] columnNames = new String[cursor.getColumnCount()];
-      for (int j = 0; j < columnNames.length; j++) {
-        columnNames[j] = cursor.getColumnName(j);
-      }
+      String[] columnNames = cursor.getColumnNames();
       debug("returning %d rows", rows.length);
       return new PluginResult(rows, columnNames, 0, 0, null);
     } finally {
