@@ -10,18 +10,23 @@ var sauceConnectLauncher = require('sauce-connect-launcher');
 var reporter = require('./test-reporter');
 var request = require('request-promise');
 var denodeify = require('denodeify');
-var readFile = denodeify(require('fs').readFile);
+var fs = require('fs');
+var readFile = denodeify(fs.readFile);
 var uuid = require('uuid');
+var zlib = require('zlib');
+var zip = zlib.createDeflate();
+var zipdir = denodeify(require('zip-dir'));
 
 chai.use(chaiAsPromised);
 chai.should();
 chaiAsPromised.transferPromiseness = wd.transferPromiseness;
 
 var ANDROID_PATH = './test/platforms/android/build/outputs/apk/android-debug.apk';
-var IOS_PATH = './test/platforms/ios/build/emulator/SQLitePlugin2.app';
+var IOS_PATH = './test/platforms/ios/build/emulator/SQLitePlugin2.app.zip';
 var MAX_NUM_TRIES = 100;
 var RETRY_TIMEOUT = 5000;
 var WAIT_TIMEOUT = 3000;
+var IMPLICIT_WAIT_TIMEOUT = 20000;
 var PLATFORM = process.env.PLATFORM || 'android';
 
 var username = process.env.SAUCE_USERNAME;
@@ -43,23 +48,29 @@ function configureAndroid() {
     desired.platformVersion = process.env.PLATFORM_VERSION;
     // via https://wiki.saucelabs.com/display/DOCS/Platform+Configurator
     desired.browserName = '';
-    desired.appiumVersion = '1.5.0';
+    desired.appiumVersion = '1.5.1';
     desired.deviceName = 'Android Emulator';
     desired.deviceType = 'phone';
     desired.deviceOrientation = 'portrait';
-    desired.platformName = 'Android';
   }
 }
 
 function configureIos() {
   app = path.resolve(IOS_PATH);
   desired = {
-    'appium-version': '1.5.0',
     platformName: 'iOS',
     deviceName: 'iPhone Simulator',
     platformVersion: '9.1',
     app: app
   };
+  if (process.env.TRAVIS) {
+    desired.platformVersion = process.env.PLATFORM_VERSION;
+    // via https://wiki.saucelabs.com/display/DOCS/Platform+Configurator
+    desired.browserName = '';
+    desired.appiumVersion = '1.5.1';
+    desired.deviceName = 'iPhone Simulator';
+    desired.deviceOrientation = 'portrait';
+  }
 }
 
 if (PLATFORM === 'android') {
@@ -81,7 +92,7 @@ function wait(ms) {
 }
 
 function runTest() {
-  return browser.setImplicitWaitTimeout(WAIT_TIMEOUT).then(function () {
+  return browser.setImplicitWaitTimeout(IMPLICIT_WAIT_TIMEOUT).then(function () {
     return wait(RETRY_TIMEOUT);
   }).then(function () {
     return browser.contexts();
@@ -127,7 +138,7 @@ function waitForZuul() {
   });
 }
 
-function uploadAppToSauceAndGetUrl() {
+function uploadAndroidAppToSauceAndGetUrl() {
   var filepath = desired.app;
 
   var id = uuid.v4();
@@ -151,6 +162,31 @@ function uploadAppToSauceAndGetUrl() {
   });
 }
 
+function uploadIosAppToSauceAndGetUrl() {
+  var filepath = desired.app;
+  var id = uuid.v4();
+
+  return readFile(filepath).then(function (buffer) {
+    var uploadUrl = 'https://saucelabs.com/rest/v1/storage/' +
+      username + '/' + id + '.zip';
+
+    return request({
+      method: 'POST',
+      uri: uploadUrl,
+      body: buffer,
+      headers: {
+        'Content-Type': 'application/octet-stream'
+      },
+      auth: {
+        user: username,
+        pass: accessKey
+      }
+    });
+  }).then(function () {
+    return 'sauce-storage:' + id + '.zip';
+  });
+}
+
 function sauceSetup() {
   var options = {
     username: username,
@@ -167,7 +203,11 @@ function sauceSetup() {
   }).then(function (process) {
     sauceConnectProcess = process;
     driver = wd.promiseChainRemote("localhost", 4445, username, accessKey);
-    return uploadAppToSauceAndGetUrl();
+    if (PLATFORM === 'android') {
+      return uploadAndroidAppToSauceAndGetUrl();
+    } else {
+      return uploadIosAppToSauceAndGetUrl();
+    }
   }).then(function (url) {
     desired.app = url;
     browser = driver.init(desired);

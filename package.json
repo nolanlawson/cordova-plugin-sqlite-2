@@ -54,9 +54,11 @@
     "rimraf": "2.5.2",
     "rollupify": "0.2.0",
     "sauce-connect-launcher": "0.14.0",
+    "temp": "^0.8.3",
     "uuid": "^2.0.1",
     "wd": "0.4.0",
     "websql": "0.4.2",
+    "zip-dir": "^1.0.2",
     "zuul": "3.10.1"
   },
   "files": [
