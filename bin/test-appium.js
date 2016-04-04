@@ -166,7 +166,13 @@ function uploadIosAppToSauceAndGetUrl() {
   var filepath = desired.app;
   var id = uuid.v4();
 
-  return zipdir(filepath).then(function (buffer) {
+  var parentDir = path.resolve(filepath, '..');
+  var zipOpts = {
+    filter: function (path) {
+      return /\.app$/.test(path);
+    }
+  };
+  return zipdir(parentDir, zipOpts).then(function (buffer) {
     var uploadUrl = 'https://saucelabs.com/rest/v1/storage/' +
       username + '/' + id + '.zip';
 
