@@ -169,7 +169,7 @@ function uploadIosAppToSauceAndGetUrl() {
   var parentDir = path.resolve(filepath, '..');
   var zipOpts = {
     filter: function (path) {
-      return /\.app$/.test(path);
+      return path.indexOf('SQLitePlugin2.app') !== -1;
     }
   };
   return zipdir(parentDir, zipOpts).then(function (buffer) {
