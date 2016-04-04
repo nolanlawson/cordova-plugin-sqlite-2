@@ -22,6 +22,7 @@ var IOS_PATH = './test/platforms/ios/build/emulator/SQLitePlugin2.app';
 var MAX_NUM_TRIES = 100;
 var RETRY_TIMEOUT = 5000;
 var WAIT_TIMEOUT = 3000;
+var IMPLICIT_WAIT_TIMEOUT = 20000;
 var PLATFORM = process.env.PLATFORM || 'android';
 
 var username = process.env.SAUCE_USERNAME;
@@ -81,7 +82,7 @@ function wait(ms) {
 }
 
 function runTest() {
-  return browser.setImplicitWaitTimeout(WAIT_TIMEOUT).then(function () {
+  return browser.setImplicitWaitTimeout(IMPLICIT_WAIT_TIMEOUT).then(function () {
     return wait(RETRY_TIMEOUT);
   }).then(function () {
     return browser.contexts();
