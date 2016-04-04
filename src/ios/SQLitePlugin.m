@@ -7,7 +7,7 @@
 #import "sqlite3.h"
 
 // Uncomment this to enable debug mode
-#define DEBUG_MODE = 1;
+// #define DEBUG_MODE = 1;
 
 #ifdef DEBUG_MODE
 #   define logDebug(...) NSLog(__VA_ARGS__)
@@ -105,7 +105,7 @@
     logDebug(@"execOnBackgroundThread()");
     NSString *dbName = [command.arguments objectAtIndex:0];
     NSArray *sqlQueries = [command.arguments objectAtIndex:1];
-    BOOL readOnly = [command.arguments objectAtIndex:2];
+    BOOL readOnly = [[command.arguments objectAtIndex:2] boolValue];
     long length = [sqlQueries count];
     SQLitePluginResult *sqlResult;
     int i;
@@ -191,6 +191,12 @@
         error = [SQLitePlugin convertSQLiteErrorToString:db];
         logDebug(@"prepare error!");
         logDebug(@"error: %@", error);
+        [resultSet setError:error];
+        return resultSet;
+    }
+    
+    if (readOnly && !sqlite3_stmt_readonly(statement)) {
+        error = [NSString stringWithFormat:@"could not prepare %@", sql];
         [resultSet setError:error];
         return resultSet;
     }
