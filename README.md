@@ -77,7 +77,12 @@ can use IndexedDB/WebSQL instead.
 
 ##### iOS
 
-On iOS, this plugin is still slower than native WebSQL due to the overhead of serializing data sent between the WebView and the native layer. But sometimes native WebSQL isn't an option: e.g. you are using WKWebView (where [WebSQL is not supported](https://bugs.webkit.org/show_bug.cgi?id=137760)), or you need to store more than [the maximum allowed by Apple in regular WebSQL](https://pouchdb.com/errors.html#not_enough_space).
+On iOS, this plugin is still slower than native WebSQL due to the overhead of serializing data sent between the WebView and the native layer.
+
+However, sometimes native WebSQL isn't an option: e.g. you are using WKWebView (where [WebSQL is not supported](https://bugs.webkit.org/show_bug.cgi?id=137760)), or you need to store more than [the maximum allowed by Apple in regular WebSQL](https://pouchdb.com/errors.html#not_enough_space). In those cases, this plugin can be very handy.
+
+On both iOS and Android, this plugin can also be considered useful if you need huge
+amounts of storage, or prepopulated databases.
 
 #### Where is data stored?
 
