@@ -56,7 +56,7 @@
     "sauce-connect-launcher": "0.14.0",
     "uuid": "^2.0.1",
     "wd": "0.4.0",
-    "websql": "0.4.1",
+    "websql": "0.4.2",
     "zuul": "3.10.1"
   },
   "files": [
