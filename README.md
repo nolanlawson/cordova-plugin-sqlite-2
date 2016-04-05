@@ -3,15 +3,15 @@ Cordova SQLite Plugin 2 [![Build Status](https://travis-ci.org/nolanlawson/sqlit
 
 **WORK IN PROGRESS. PLEASE DO NOT USE YET.**
 
-A rewrite of the [Cordova SQLite Plugin](https://github.com/litehelpers/Cordova-sqlite-storage) (aka "SQLite storage"). In most cases, it should be a drop-in replacement.
+A rewrite/fork of the [Cordova SQLite Plugin](https://github.com/litehelpers/Cordova-sqlite-storage) (aka "SQLite storage"). In most cases, it should be a drop-in replacement.
 
 This plugin allows you to use a [WebSQL](http://www.w3.org/TR/webdatabase/)-compatible API to store data
-in your Cordova/PhoneGap/Ionic app, while proxying to a SQLite database on the native side. The main
+in your Cordova/PhoneGap/Ionic app, by proxying to a SQLite database on the native side. The main
 benefits are:
 
 1. unlimited storage
 2. pre-populated databases
-3. support where WebSQL isn't available (namely iOS WKWebView)
+3. support where WebSQL isn't available ([namely iOS WKWebView](https://bugs.webkit.org/show_bug.cgi?id=137760))
 
 **Note:** if you can avoid using this plugin in favor of [IndexedDB](http://w3c.github.io/IndexedDB/), then you should.
 Performance, browser support, and future prospects are all better in IndexedDB. Please see [goals](#goals) and [non-goals](#non-goals) for more explanation.
@@ -19,9 +19,11 @@ Performance, browser support, and future prospects are all better in IndexedDB. 
 Usage
 ----
 
+Using the [cordova CLI](https://www.npmjs.com/package/cordova):
+
     cordova plugin add cordova-sqlite-plugin-2
 
-Then you'll get a global `window.sqlitePlugin` variable, with an `openDatabase` function
+This provides a global `window.sqlitePlugin` variable, with an `openDatabase` function
 that is exactly the same as WebSQL. Example usage:
 
 ```js
@@ -38,26 +40,35 @@ The other values are for backwards compatibility with WebSQL.
 
 For a tutorial on how to use WebSQL, check out [the HTML5 Rocks article](http://www.html5rocks.com/en/tutorials/webdatabase/todo/) or [the HTML5 Doctor article](http://html5doctor.com/introducing-web-sql-databases/).
 
-Description
+Goals
 ---
 
-#### Goals
+- **Minimal:** Just polyfills WebSQL via native SQLite.
+- **Well-tested:** Over 600 automated tests that [run in CI](https://travis-ci.org/nolanlawson/sqlite-plugin-2/builds) (many borrowed from the [PouchDB](http://pouchdb.com/) test suite).
+- **Lightweight:** Instead of bundling SQLite with the plugin, it uses the built-in Android and iOS APIs.
+- **Simple**: Uses [node-websql](https://github.com/nolanlawson/node-websql) to minimize native code. Transactional logic is mostly implemented in JavaScript.
 
-- **Minimalism:** Just polyfill WebSQL via native SQLite.
-- **Correctness:** Over 600 automated tests that run in CI (many borrowed from the [PouchDB](http://pouchdb.com/) test suite).
-- **Simplicity**: Uses [node-websql](https://github.com/nolanlawson/node-websql) to minimize native code. Transactional logic is mostly implemented in JavaScript. This reduces bugs and makes it easier to re-use code.
+Non-goals
+----
 
-#### Non-goals
+This project is not designed to provide 100% of the functionality of the old SQLite Plugin – deleting databases, closing databases, specifying a particular location, etc. The goal is just to provide a bridge to WebSQL, especially for environments where WebSQL is unavailable and IndexedDB is unfeasible (e.g. WKWebView on iOS).
 
-This project is not designed to provide 100% of the functionality of the old SQLite Plugin – deleting databases, closing databases, specifying a particular location, etc. The goal is just to provide a bridge to WebSQL, especially for environments where it doesn't work anymore and IndexedDB is not feasible (e.g. WKWebView on iOS).
+If possible, you should prefer IndexedDB, e.g. via wrapper library like [Dexie](http://dexie.org/), [LocalForage](http://mozilla.github.io/localForage/), or [PouchDB](http://pouchdb.com/). This plugin should be thought of as a polyfill for less-capable platforms ([namely iOS](http://www.raymondcamden.com/2014/09/25/IndexedDB-on-iOS-8-Broken-Bad/)) while we wait for their browser implementations to catch up.
 
-IndexedDB is the future of storage on the web. If possible, you should use that, e.g. via wrapper library like [Dexie](http://dexie.org/), [LocalForage](http://mozilla.github.io/localForage/), or [PouchDB](http://pouchdb.com/). This plugin should be thought of as a polyfill for less-capable platforms ([namely iOS](http://www.raymondcamden.com/2014/09/25/IndexedDB-on-iOS-8-Broken-Bad/)) while we wait for their browser implementations to catch up.
+Supported platforms
+---
 
-#### Android vs iOS
+- Android 4+ (including Crosswalk)
+- iOS 7+ (both UIWebView and WKWebView)
+
+To see which platforms are tested in CI, see [the Travis builds](https://travis-ci.org/nolanlawson/sqlite-plugin-2/builds).
+
+Android vs iOS
+----
 
 **TLDR:** This plugin is more useful on iOS than on Android.
 
-##### Android
+#### Android
 
 If possible, you should avoid using this library on Android.
 It works, but IndexedDB and WebSQL are better supported and faster on that platform.
@@ -75,7 +86,7 @@ document.addEventListener('deviceready', function () {
 This will prevent tools like PouchDB from using the `sqlitePlugin` object, so they
 can use IndexedDB/WebSQL instead.
 
-##### iOS
+#### iOS
 
 On iOS, this plugin is still slower than native WebSQL due to the overhead of serializing data sent between the WebView and the native layer.
 
@@ -84,7 +95,8 @@ However, sometimes native WebSQL isn't an option: e.g. you are using WKWebView (
 On both iOS and Android, this plugin can also be considered useful if you need huge
 amounts of storage, or prepopulated databases.
 
-#### Where is data stored?
+Where is data stored?
+----
 
 On Android, it's stored in the app's local directory, under `files/`, accessed natively
 via:
