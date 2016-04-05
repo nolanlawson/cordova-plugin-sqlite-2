@@ -223,9 +223,14 @@ function setup() {
 }
 
 function cleanup() {
-  if (sauceConnectProcess) {
-    sauceConnectProcess.close();
+  if (!driver) {
+    return Promise.resolve();
   }
+  return driver.quit().then(function () {
+    if (sauceConnectProcess) {
+      sauceConnectProcess.close();
+    }
+  });
 }
 
 Promise.resolve().then(function () {
@@ -234,11 +239,13 @@ Promise.resolve().then(function () {
   console.log('running tests on platform: ' + PLATFORM);
   return runTest();
 }).then(function () {
-  cleanup();
-  console.log('done!');
-  process.exit(0);
+  return cleanup().then(function () {
+    console.log('done!');
+    process.exit(0);
+  });
 }).catch(function (err) {
-  cleanup();
-  console.log(err.stack);
-  process.exit(1);
+  return cleanup().then(function () {
+    console.log(err.stack);
+    process.exit(1);
+  });
 });
