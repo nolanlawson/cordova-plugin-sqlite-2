@@ -11,7 +11,7 @@ var reporter = require('./test-reporter');
 var request = require('request-promise');
 var denodeify = require('denodeify');
 var fs = require('fs');
-var readFile = denodeify(fs.readFile);
+var stream2promise = require('stream-to-promise');
 var uuid = require('uuid');
 
 chai.use(chaiAsPromised);
@@ -137,53 +137,34 @@ function waitForZuul() {
   });
 }
 
-function uploadAndroidAppToSauceAndGetUrl() {
+function uploadFileAndGetUrl(extension) {
   var filepath = desired.app;
-
   var id = uuid.v4();
-  return readFile(filepath).then(function (buffer) {
-    var uploadUrl = 'https://saucelabs.com/rest/v1/storage/' +
-      username + '/' + id + '.apk';
-    return request({
-      method: 'POST',
-      uri: uploadUrl,
-      body: buffer,
-      headers: {
-        'Content-Type': 'application/octet-stream'
-      },
-      auth: {
-        user: username,
-        pass: accessKey
-      }
-    });
-  }).then(function () {
-    return 'sauce-storage:' + id + '.apk';
+  var uploadUrl = 'https://saucelabs.com/rest/v1/storage/' +
+    username + '/' + id + extension;
+
+  var stream = fs.createReadStream(filepath).pipe(request({
+    method: 'POST',
+    uri: uploadUrl,
+    headers: {
+      'Content-Type': 'application/octet-stream'
+    },
+    auth: {
+      user: username,
+      pass: accessKey
+    }
+  }));
+  return stream2promise(stream).then(function () {
+    return 'sauce-storage:' + id + extension;
   });
 }
 
+function uploadAndroidAppToSauceAndGetUrl() {
+  return uploadFileAndGetUrl('.apk');
+}
+
 function uploadIosAppToSauceAndGetUrl() {
-  var filepath = desired.app;
-  var id = uuid.v4();
-
-  return readFile(filepath).then(function (buffer) {
-    var uploadUrl = 'https://saucelabs.com/rest/v1/storage/' +
-      username + '/' + id + '.zip';
-
-    return request({
-      method: 'POST',
-      uri: uploadUrl,
-      body: buffer,
-      headers: {
-        'Content-Type': 'application/octet-stream'
-      },
-      auth: {
-        user: username,
-        pass: accessKey
-      }
-    });
-  }).then(function () {
-    return 'sauce-storage:' + id + '.zip';
-  });
+  return uploadFileAndGetUrl('.zip');
 }
 
 function sauceSetup() {
@@ -223,9 +204,14 @@ function setup() {
 }
 
 function cleanup() {
-  if (sauceConnectProcess) {
-    sauceConnectProcess.close();
+  if (!driver) {
+    return Promise.resolve();
   }
+  return driver.quit().then(function () {
+    if (sauceConnectProcess) {
+      sauceConnectProcess.close();
+    }
+  });
 }
 
 Promise.resolve().then(function () {
@@ -234,11 +220,13 @@ Promise.resolve().then(function () {
   console.log('running tests on platform: ' + PLATFORM);
   return runTest();
 }).then(function () {
-  cleanup();
-  console.log('done!');
-  process.exit(0);
+  return cleanup().then(function () {
+    console.log('done!');
+    process.exit(0);
+  });
 }).catch(function (err) {
-  cleanup();
-  console.log(err.stack);
-  process.exit(1);
+  return cleanup().then(function () {
+    console.log(err.stack);
+    process.exit(1);
+  });
 });

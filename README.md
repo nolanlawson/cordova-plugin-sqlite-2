@@ -59,7 +59,7 @@ Supported platforms
 ---
 
 - Android 4+ (including Crosswalk)
-- iOS 7+ (both UIWebView and WKWebView)
+- iOS 8+ (both UIWebView and WKWebView)
 
 To see which platforms are tested in CI, see [the Travis builds](https://travis-ci.org/nolanlawson/sqlite-plugin-2/builds).
 
