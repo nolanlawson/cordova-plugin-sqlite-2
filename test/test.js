@@ -3,7 +3,7 @@ require('pouchdb').preferredAdapters = ['websql'];
 require('chai').use(require('chai-as-promised'));
 
 describe('sqlite plugin test suite', function () {
-  this.timeout(180000);
+  this.timeout(600000);
 
   require('./test.main.js');
   require('./test.compaction.js');
