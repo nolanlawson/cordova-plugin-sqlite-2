@@ -60,3 +60,9 @@ if [[ $RUN == '1' ]]; then
 else
   $CORDOVA build $PLATFORM
 fi
+
+if [[ $PLATFORM == 'ios' ]]; then
+  # zip up for upload to appium
+  cd platforms/ios/build/emulator
+  zip -r SQLitePlugin2.app.zip SQLitePlugin2.app
+fi
