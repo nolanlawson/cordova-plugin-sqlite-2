@@ -14,7 +14,9 @@ before_install:
 env:
   matrix:
   - COMMAND=test-phantom
+  - PLATFORM_VERSION=4.4 PLATFORM=android COMMAND=test
   - PLATFORM_VERSION=5.1 PLATFORM=android COMMAND=test
+  - PLATFORM_VERSION=7.0 PLATFORM=ios COMMAND=test
   - PLATFORM_VERSION=9.2 PLATFORM=ios COMMAND=test
   - PLATFORM_VERSION=9.2 PLATFORM=ios WKWEBVIEW=1 COMMAND=test
   global:
