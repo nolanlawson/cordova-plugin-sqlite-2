@@ -3,7 +3,8 @@ package com.nolanlawson.cordova.sqlite;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteStatement;
-import android.os.AsyncTask;
+import android.os.Handler;
+import android.os.HandlerThread;
 import android.util.Log;
 
 import org.apache.cordova.CallbackContext;
@@ -14,12 +15,6 @@ import org.json.JSONException;
 import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.Executor;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-import java.util.regex.Pattern;
 
 /**
   * Author: Nolan Lawson
@@ -34,19 +29,15 @@ public class SQLitePlugin extends CordovaPlugin {
   private static final Object[][] EMPTY_ROWS = new Object[][]{};
   private static final String[] EMPTY_COLUMNS = new String[]{};
 
-  private static final Pattern PATTERN_SELECT = Pattern.compile("^\\s*SELECT\\b", Pattern.CASE_INSENSITIVE);
-  private static final Pattern PATTERN_INSERT = Pattern.compile("^\\s*INSERT\\b", Pattern.CASE_INSENSITIVE);
-
   private static final Map<String, SQLiteDatabase> DATABASES = new HashMap<String, SQLiteDatabase>();
 
-  private static final ThreadFactory threadFactory = new ThreadFactory() {
-    public Thread newThread(Runnable r) {
-      return new Thread(r, "SQLitePlugin BG Thread");
-    }
-  };
-  private static final Executor SINGLE_EXECUTOR = new ThreadPoolExecutor(
-      1, 1, 1,
-      TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(), threadFactory);
+  private final Handler backgroundHandler = createBackgroundHandler();
+
+  private Handler createBackgroundHandler() {
+    HandlerThread thread = new HandlerThread("SQLitePlugin BG Thread");
+    thread.start();
+    return new Handler(thread.getLooper());
+  }
 
   @Override
   public boolean execute(String action, JSONArray args, CallbackContext callbackContext) throws JSONException {
@@ -55,15 +46,19 @@ public class SQLitePlugin extends CordovaPlugin {
     return true;
   }
 
-  private void run(JSONArray args, CallbackContext context) {
-    BackgroundTaskArgs backgroundTaskArgs = new BackgroundTaskArgs(args, context);
-    new BackgroundTask(backgroundTaskArgs)
-        .executeOnExecutor(SINGLE_EXECUTOR);
+  private void run(final JSONArray args, final CallbackContext callbackContext) {
+    backgroundHandler.post(new Runnable() {
+      @Override
+      public void run() {
+        PluginResult[] pluginResults = runInBackground(args);
+        callbackContext.success(pluginResultsToJson(pluginResults));
+      }
+    });
   }
 
-  private PluginResult[] runInBackground(BackgroundTaskArgs backgroundTaskArgs) {
+  private PluginResult[] runInBackground(JSONArray args) {
     try {
-      ExecArguments execArguments = jsonToExecArguments(backgroundTaskArgs.jsonArray);
+      ExecArguments execArguments = jsonToExecArguments(args);
       return execInBackgroundAndReturnResults(execArguments);
     } catch (Throwable e) {
       e.printStackTrace(); // should never happen
@@ -84,7 +79,7 @@ public class SQLitePlugin extends CordovaPlugin {
       String sql = sqlQuery.sql;
       String[] bindArgs = sqlQuery.args;
       try {
-        if (PATTERN_SELECT.matcher(sql).find()) {
+        if (isSelect(sql)) {
           results[i] = doSelectInBackgroundAndPossiblyThrow(sql, bindArgs, db);
         } else { // update/insert/delete
           if (readOnly) {
@@ -112,7 +107,7 @@ public class SQLitePlugin extends CordovaPlugin {
         statement.bindAllArgsAsStrings(bindArgs);
       }
       debug("bound args");
-      if (PATTERN_INSERT.matcher(sql).find()) {
+      if (isInsert(sql)) {
         debug("type: insert");
         long insertId = statement.executeInsert();
         int rowsAffected = insertId >= 0 ? 1 : 0;
@@ -189,24 +184,6 @@ public class SQLitePlugin extends CordovaPlugin {
     return database;
   }
 
-  private class BackgroundTask extends AsyncTask<Void, Void, Void> {
-
-    private BackgroundTaskArgs backgroundTaskArgs;
-
-    public BackgroundTask(BackgroundTaskArgs backgroundTaskArgs) {
-      this.backgroundTaskArgs = backgroundTaskArgs;
-    }
-
-    @Override
-    protected Void doInBackground(Void... params) {
-      debug("my thread is: %s", Thread.currentThread().getName());
-      PluginResult[] pluginResults = runInBackground(this.backgroundTaskArgs);
-
-      this.backgroundTaskArgs.callbackContext.success(pluginResultsToJson(pluginResults));
-      return null;
-    }
-  }
-
   private static void debug(String line, Object... format) {
     if (DEBUG_MODE) {
       Log.d(TAG, String.format(line, format));
@@ -275,6 +252,38 @@ public class SQLitePlugin extends CordovaPlugin {
     return new ExecArguments(dbName, sqlQueries, readOnly);
   }
 
+  private static boolean isSelect(String str) {
+    return startsWithCaseInsensitive(str, "select");
+  }
+  private static boolean isInsert(String str) {
+    return startsWithCaseInsensitive(str, "insert");
+  }
+
+  // identify an "insert"/"select" query more efficiently than with a Pattern
+  private static boolean startsWithCaseInsensitive(String str, String substr) {
+    int i = -1;
+    int len = str.length();
+    while (++i < len) {
+      char ch = str.charAt(i);
+      if (!Character.isWhitespace(ch)) {
+        break;
+      }
+    }
+
+    int j = -1;
+    int substrLen = substr.length();
+    while (++j < substrLen) {
+      if (j + i >= len) {
+        return false;
+      }
+      char ch = str.charAt(j + i);
+      if (Character.toLowerCase(ch) != substr.charAt(j)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   private static class PluginResult {
     public final Object[][] rows;
     public final String[] columns;
@@ -289,16 +298,6 @@ public class SQLitePlugin extends CordovaPlugin {
       this.rowsAffected = rowsAffected;
       this.insertId = insertId;
       this.error = error;
-    }
-  }
-
-  private static class BackgroundTaskArgs {
-    public final JSONArray jsonArray;
-    public final CallbackContext callbackContext;
-
-    public BackgroundTaskArgs(JSONArray jsonArray, CallbackContext callbackContext) {
-      this.jsonArray = jsonArray;
-      this.callbackContext = callbackContext;
     }
   }
 
@@ -329,5 +328,4 @@ public class SQLitePlugin extends CordovaPlugin {
       super("could not prepare statement (23 not authorized)");
     }
   }
-
 }
