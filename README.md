@@ -129,6 +129,10 @@ To run the tests on any available Android device:
 
     npm run test-android
 
+Or using Crosswalk:
+
+    CROSSWALK=1 npm run test-android
+
 To run the tests on any available iOS device:
 
     npm run test-ios
