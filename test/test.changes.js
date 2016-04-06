@@ -244,7 +244,6 @@ adapters.forEach(function (adapter) {
     });
 
     it('Changes with filter not present in ddoc', function (done) {
-      this.timeout(15000);
       var docs = [
         {_id: '1', integer: 1},
         { _id: '_design/foo',
@@ -2499,7 +2498,6 @@ adapters.forEach(function (adapter) {
 describe('changes-standalone', function () {
 
   it('Changes reports errors', function (done) {
-    this.timeout(2000);
     var db = new PouchDB('http://infiniterequest.com', { skipSetup: true });
     db.changes({
       timeout: 1000

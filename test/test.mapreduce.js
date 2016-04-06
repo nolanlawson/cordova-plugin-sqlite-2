@@ -2569,7 +2569,7 @@ function tests(suiteName, dbName, dbType, viewType) {
       });
     });
 
-    it('should query correctly with staggered seqs', function () {
+    it.skip('should query correctly with staggered seqs', function () {
       return new PouchDB(dbName).then(function (db) {
         return createView(db, {
           map : function (doc) {
@@ -2950,7 +2950,7 @@ function tests(suiteName, dbName, dbType, viewType) {
       });
     });
 
-    it('should handle many doc changes', function () {
+    it.skip('should handle many doc changes', function () {
 
       var docs = [{_id: '0'}, {_id : '1'}, {_id: '2'}];
 

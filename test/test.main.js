@@ -465,7 +465,6 @@ function getInsertId(res) {
 }
 
 describe('dedicated db test suite - in-memory', function () {
-  this.timeout(60000);
 
   var db;
 
@@ -778,8 +777,6 @@ describe('dedicated db test suite - in-memory', function () {
 
 describe('dedicated db test suite - actual DB', function () {
 
-  this.timeout(60000);
-
   var db;
 
   beforeEach(function () {
@@ -837,8 +834,6 @@ describe('dedicated db test suite - actual DB', function () {
 
 describe('dedicated db test suite - actual DB', function () {
 
-  this.timeout(60000);
-
   var db;
 
   beforeEach(function () {
@@ -894,8 +889,6 @@ describe('dedicated db test suite - actual DB', function () {
 });
 
 describe('advanced test suite - actual DB', function () {
-
-  this.timeout(60000);
 
   var db;
 

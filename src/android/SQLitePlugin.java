@@ -18,9 +18,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
-  * Author: Nolan Lawson
-  * License: Apache 2
-  */
+ * Author: Nolan Lawson
+ * License: Apache 2
+ */
 public class SQLitePlugin extends CordovaPlugin {
 
   private static final boolean DEBUG_MODE = false;
@@ -53,23 +53,18 @@ public class SQLitePlugin extends CordovaPlugin {
       @Override
       public void run() {
         try {
-          SQLitePLuginResult[] pluginResults = runInBackground(args);
-          callbackContext.success(pluginResultsToString(pluginResults));
+          runInBackground(args, callbackContext);
         } catch (Throwable e) {
           e.printStackTrace(); // should never happen
-          throw new RuntimeException(e);
+          callbackContext.error(e.getMessage());
         }
       }
     });
   }
 
-  private SQLitePLuginResult[] runInBackground(JSONArray args) {
-    try {
-      return execInBackgroundAndReturnResults(args);
-    } catch (Throwable e) {
-      e.printStackTrace(); // should never happen
-      throw new RuntimeException(e);
-    }
+  private void runInBackground(JSONArray args, CallbackContext callbackContext) throws JSONException {
+    SQLitePLuginResult[] pluginResults = execInBackgroundAndReturnResults(args);
+    callbackContext.success(pluginResultsToString(pluginResults));
   }
 
   private SQLitePLuginResult[] execInBackgroundAndReturnResults(JSONArray args) throws JSONException {
@@ -131,7 +126,7 @@ public class SQLitePlugin extends CordovaPlugin {
         // perf boost by just executing the query
         debug("type: drop/create/etc.");
         statement.execute();
-        return new SQLitePLuginResult(EMPTY_ROWS, EMPTY_COLUMNS, 0, 0, null);
+        return EMPTY_RESULT;
       }
     } finally {
       if (statement != null) {
@@ -294,15 +289,6 @@ public class SQLitePlugin extends CordovaPlugin {
     return startsWithCaseInsensitive(str, "delete");
   }
 
-  private static String[] jsonArrayToStringArray(JSONArray jsonArray) throws JSONException {
-    int len = jsonArray.length();
-    String[] res = new String[len];
-    for (int i = 0; i < len; i++) {
-      res[i] = jsonArray.getString(i);
-    }
-    return res;
-  }
-
   // identify an "insert"/"select" query more efficiently than with a Pattern
   private static boolean startsWithCaseInsensitive(String str, String substr) {
     int i = -1;
@@ -326,6 +312,15 @@ public class SQLitePlugin extends CordovaPlugin {
       }
     }
     return true;
+  }
+
+  private static String[] jsonArrayToStringArray(JSONArray jsonArray) throws JSONException {
+    int len = jsonArray.length();
+    String[] res = new String[len];
+    for (int i = 0; i < len; i++) {
+      res[i] = jsonArray.getString(i);
+    }
+    return res;
   }
 
   private static class SQLitePLuginResult {

@@ -320,7 +320,6 @@ adapters.forEach(function (adapter) {
     });
 
     it('test total_rows with a variety of criteria', function (done) {
-      this.timeout(20000);
       var db = new PouchDB(dbs.name);
 
       var docs = [

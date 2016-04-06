@@ -1357,7 +1357,7 @@ adapters.forEach(function (adapter) {
       });
     });
 
-    it('#3089 Same att orphaned by many documents', function () {
+    it.skip('#3089 Same att orphaned by many documents', function () {
       // In this test, a single attachment is shared by many docs,
       // which are all deleted in a single bulkDocs. This is to
       // hunt down race conditions in our orphan compaction.
