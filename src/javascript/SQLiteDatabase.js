@@ -37,6 +37,9 @@ function arrayifyQuery(query) {
 SQLiteDatabase.prototype.exec = function exec(queries, readOnly, callback) {
 
   function onSuccess(rawResults) {
+    if (typeof rawResults === 'string') {
+      rawResults = JSON.parse(rawResults);
+    }
     var results = map(rawResults, dearrayifyRow);
     callback(null, results);
   }
