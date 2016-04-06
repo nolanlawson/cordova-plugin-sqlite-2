@@ -3,7 +3,7 @@ Cordova SQLite Plugin 2 [![Build Status](https://travis-ci.org/nolanlawson/sqlit
 
 **WORK IN PROGRESS. PLEASE DO NOT USE YET.**
 
-A rewrite/fork of the [Cordova SQLite Plugin](https://github.com/litehelpers/Cordova-sqlite-storage) (aka "SQLite storage"). In most cases, it should be a drop-in replacement.
+A rewrite/fork of the [Cordova SQLite Plugin](https://github.com/litehelpers/Cordova-sqlite-storage). In most cases, it should be a drop-in replacement.
 
 This plugin allows you to use a [WebSQL](http://www.w3.org/TR/webdatabase/)-compatible API to store data
 in your Cordova/PhoneGap/Ionic app, by proxying to a SQLite database on the native side. The main
@@ -13,17 +13,20 @@ benefits are:
 2. pre-populated databases
 3. support where WebSQL isn't available ([namely iOS WKWebView](https://bugs.webkit.org/show_bug.cgi?id=137760))
 
-**Note:** if you can avoid using this plugin in favor of [IndexedDB](http://w3c.github.io/IndexedDB/), then you should.
+**Note:** if you can avoid using this plugin in favor of [IndexedDB](http://w3c.github.io/IndexedDB/) (or regular WebSQL), then you should.
 Performance, browser support, and future prospects are all better in IndexedDB. Please see [goals](#goals) and [non-goals](#non-goals) for more explanation.
+
+Install
+----
+
+Use the [Cordova CLI](https://www.npmjs.com/package/cordova) to download from npm:
+
+    cordova plugin add cordova-sqlite-plugin-2
 
 Usage
 ----
 
-Using the [cordova CLI](https://www.npmjs.com/package/cordova):
-
-    cordova plugin add cordova-sqlite-plugin-2
-
-This provides a global `window.sqlitePlugin` variable, with an `openDatabase` function
+This plugin provides a global `window.sqlitePlugin` variable, with an `openDatabase` function
 that is exactly the same as WebSQL. Example usage:
 
 ```js
@@ -37,6 +40,13 @@ db.transaction(function (txn) {
 
 Only the first argument to `openDatabase()` (the database name) is used.
 The other values are for backwards compatibility with WebSQL.
+
+You can also pass in a single options object with the `name` key. This is for compatibility
+with the old SQLite Plugin, although it is non-standard with respect to WebSQL:
+
+```js
+var db = sqlitePlugin.openDatabase({name: 'mydb.db'});
+```
 
 For a tutorial on how to use WebSQL, check out [the HTML5 Rocks article](http://www.html5rocks.com/en/tutorials/webdatabase/todo/) or [the HTML5 Doctor article](http://html5doctor.com/introducing-web-sql-databases/).
 
@@ -61,7 +71,7 @@ Supported platforms
 - Android 4+ (including Crosswalk)
 - iOS 8+ (both UIWebView and WKWebView)
 
-To see which platforms are tested in CI, see [the Travis builds](https://travis-ci.org/nolanlawson/sqlite-plugin-2/builds).
+It may work in iOS 6 and 7 as well, but I couldn't find a simulator to test. To see which platforms are tested in CI, see [the Travis builds](https://travis-ci.org/nolanlawson/sqlite-plugin-2/builds).
 
 Android vs iOS
 ----
@@ -88,9 +98,7 @@ can use IndexedDB/WebSQL instead.
 
 #### iOS
 
-On iOS, this plugin is still slower than native WebSQL due to the overhead of serializing data sent between the WebView and the native layer.
-
-However, sometimes native WebSQL isn't an option: e.g. you are using WKWebView (where [WebSQL is not supported](https://bugs.webkit.org/show_bug.cgi?id=137760)), or you need to store more than [the maximum allowed by Apple in regular WebSQL](https://pouchdb.com/errors.html#not_enough_space). In those cases, this plugin can be very handy.
+On iOS, this plugin is quite a bit slower than native WebSQL, due to the overhead of serializing data sent between the WebView and the native layer. However, sometimes native WebSQL isn't an option: e.g. you are using WKWebView (where [WebSQL is not supported](https://bugs.webkit.org/show_bug.cgi?id=137760)), or you need to store more than [the maximum allowed by Apple in regular WebSQL](https://pouchdb.com/errors.html#not_enough_space). In those cases, this plugin can be very handy.
 
 On both iOS and Android, this plugin can also be considered useful if you need huge
 amounts of storage, or prepopulated databases.
