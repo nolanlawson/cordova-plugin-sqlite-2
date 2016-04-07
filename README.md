@@ -169,3 +169,12 @@ Or to use normal WebSQL on either iOS or Android:
 Or to run the tests against PhantomJS, using normal WebSQL:
 
     npm run test-phantom
+
+You can also run performance tests:
+
+    PLATFORM=ios npm run test-perf
+    PLATFORM=android npm run test-perf
+    PLATFORM=ios WEBSQL=1 npm run test-perf
+    PLATFORM=android WEBSQL=1 npm run test-perf
+    PLATFORM=ios WKWEBVIEW=1 npm run test-perf
+    PLATFORM=ios OLD_SQLITE_PLUGIN=1 npm run test-perf

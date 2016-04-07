@@ -3,6 +3,8 @@ dist
 npm-debug.log
 test/plugins
 test/platforms
+perf/plugins
+perf/platforms
 test/www/hljs-monokai.css
 test/www/test-bundle.js
 test/www/test-bundle.map.json
