@@ -11,6 +11,7 @@
     "test-android": "PLATFORM=android npm run test-device",
     "test-ios": "PLATFORM=ios npm run test-device",
     "test-device": "npm run build && RUN=0 npm run build-test && bash ./bin/run-and-test-appium.sh",
+    "test-perf": "bash ./bin/test-perf.sh",
     "prepublish": "npm run build"
   },
   "cordova": {
@@ -55,6 +56,8 @@
     "rollupify": "0.2.0",
     "sauce-connect-launcher": "0.14.0",
     "stream-to-promise": "1.1.0",
+    "tape": "4.5.1",
+    "ua-parser-js": "0.7.10",
     "uuid": "2.0.1",
     "wd": "0.4.0",
     "websql": "0.4.3",
