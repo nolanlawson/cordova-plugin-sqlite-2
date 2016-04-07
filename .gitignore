@@ -5,7 +5,6 @@ test/plugins
 test/platforms
 perf/plugins
 perf/platforms
-perf/www/bundle.js
 test/www/hljs-monokai.css
 test/www/test-bundle.js
 test/www/test-bundle.map.json

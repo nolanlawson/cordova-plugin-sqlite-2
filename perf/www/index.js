@@ -10,7 +10,6 @@ var PouchDB = require('pouchdb');
 var opts = {adapter: 'websql'};
 
 function runTestSuites() {
-  /*
   var reporter = require('./perf.reporter');
   reporter.log('Testing PouchDB version ' + PouchDB.version +
     (opts.adapter ?
@@ -19,9 +18,7 @@ function runTestSuites() {
 
   require('./perf.basics')(opts);
   require('./perf.views')(opts);
-  require('./perf.attachments')(opts);*/
-  var db = new PouchDB('foo');
-  db.info().then(console.log.bind(console)).catch(console.log.bind(console));
+  require('./perf.attachments')(opts);
 }
 
 document.addEventListener('deviceready', runTestSuites, false);
