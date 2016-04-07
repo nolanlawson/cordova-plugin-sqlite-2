@@ -19478,8 +19478,8 @@ function WebSqlPouch(opts, callback) {
     name: api._name,
     version: POUCH_VERSION,
     description: api._name,
-    size: size,
-    location: opts.location,
+    size: 5000000,
+    location: 'default',
     createFromLocation: opts.createFromLocation,
     androidDatabaseImplementation: opts.androidDatabaseImplementation
   });

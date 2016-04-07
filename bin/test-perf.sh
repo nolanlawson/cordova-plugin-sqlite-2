@@ -13,7 +13,7 @@ set -v
 CORDOVA=$(pwd)/node_modules/.bin/cordova
 BROWSERIFY=$(pwd)/node_modules/.bin/browserify
 
-$BROWSERIFY perf/www/index.js > perf/www/bundle.js
+#$BROWSERIFY perf/www/index.js > perf/www/bundle.js
 
 cd perf
 
