@@ -21,7 +21,7 @@ module.exports = function (opts) {
     }, {
       name: 'bulk-inserts',
       assertions: 1,
-      iterations: 100,
+      iterations: 200,
       setup: function (db, callback) {
         var docs = [];
         for (var i = 0; i < 100; i++) {
@@ -68,32 +68,9 @@ module.exports = function (opts) {
         db.get(commonUtils.createDocId(itr), done);
       }
     }, {
-      name: 'all-docs-skip-limit',
-      assertions: 1,
-      iterations: 50,
-      setup: function (db, callback) {
-        var docs = [];
-        for (var i = 0; i < 1000; i++) {
-          docs.push({_id : commonUtils.createDocId(i),
-            foo : 'bar', baz : 'quux'});
-        }
-        db.bulkDocs({docs : docs}, callback);
-      },
-      test: function (db, itr, docs, done) {
-        var tasks = [];
-        for (var i = 0; i < 10; i++) {
-          tasks.push(i);
-        }
-        Promise.all(tasks.map(function (doc, i) {
-          return db.allDocs({skip : i * 100, limit : 10});
-        })).then(function () {
-          done();
-        }, done);
-      }
-    }, {
       name: 'all-docs-startkey-endkey',
       assertions: 1,
-      iterations: 50,
+      iterations: 200,
       setup: function (db, callback) {
         var docs = [];
         for (var i = 0; i < 1000; i++) {
@@ -113,35 +90,10 @@ module.exports = function (opts) {
         Promise.all(tasks.map(function (doc, i) {
           return db.allDocs({
             startkey: commonUtils.createDocId(i * 100),
-            endkey: commonUtils.createDocId((i * 100) + 10)
+            endkey: commonUtils.createDocId((i * 100) + 10),
+            include_docs: true
           });
         })).then(function () {
-          done();
-        }, done);
-      }
-    }, {
-      name: 'all-docs-include-docs',
-      assertions: 1,
-      iterations: 100,
-      setup: function (db, callback) {
-        var docs = [];
-        for (var i = 0; i < 1000; i++) {
-          docs.push({
-            _id: commonUtils.createDocId(i),
-            foo: 'bar',
-            baz: 'quux',
-            _deleted: i % 2 === 1
-          });
-        }
-        db.bulkDocs({docs: docs}, callback);
-      },
-      test: function (db, itr, docs, done) {
-        return db.allDocs({
-          include_docs: true,
-          limit: 100
-        }).then(function () {
-          return db.post({}); // to invalidate the doc count
-        }).then(function () {
           done();
         }, done);
       }

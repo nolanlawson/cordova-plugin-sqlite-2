@@ -25637,75 +25637,12 @@ function runTestSuites() {
     '\n\n');
 
   require('./perf.basics')(opts);
-  require('./perf.views')(opts);
-  require('./perf.attachments')(opts);
 }
 
 document.addEventListener('deviceready', runTestSuites, false);
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./perf.attachments":75,"./perf.basics":76,"./perf.reporter":77,"./perf.views":78,"bluebird":3,"pouchdb":42}],75:[function(require,module,exports){
-(function (process,Buffer){
-'use strict';
-
-function randomBrowserBlob(size) {
-  var buff = new ArrayBuffer(size);
-  var arr = new Uint8Array(buff);
-  for (var i = 0; i < size; i++) {
-    arr[i] = Math.floor(65535 * Math.random());
-  }
-  return new Blob([buff], {type: 'application/octet-stream'});
-}
-
-function randomBuffer(size) {
-  var buff = new Buffer(size);
-  for (var i = 0; i < size; i++) {
-    buff.write(
-      String.fromCharCode(Math.floor(65535 * Math.random())),
-      i, 1, 'binary');
-  }
-  return buff;
-}
-
-
-function randomBlob(size) {
-  if (process.browser) {
-    return randomBrowserBlob(size);
-  } else { // node
-    return randomBuffer(size);
-  }
-}
-
-module.exports = function (PouchDB, opts) {
-
-  var utils = require('./utils');
-
-  var testCases = [
-    {
-      name: 'basic-attachments',
-      assertions: 1,
-      iterations: 1000,
-      setup: function (db, callback) {
-
-        var blob = randomBlob(50000);
-        db._blob = blob;
-        callback();
-      },
-      test: function (db, itr, doc, done) {
-        db.putAttachment(Math.random().toString(), 'foo.txt', db._blob,
-          'application/octet-stream').then(function () {
-          done();
-        }, done);
-      }
-    }
-  ];
-
-  utils.runTests(PouchDB, 'views', testCases, opts);
-
-};
-
-}).call(this,require('_process'),require("buffer").Buffer)
-},{"./utils":79,"_process":44,"buffer":6}],76:[function(require,module,exports){
+},{"./perf.basics":75,"./perf.reporter":76,"bluebird":3,"pouchdb":42}],75:[function(require,module,exports){
 'use strict';
 
 var PouchDB = require('pouchdb');
@@ -25729,7 +25666,7 @@ module.exports = function (opts) {
     }, {
       name: 'bulk-inserts',
       assertions: 1,
-      iterations: 100,
+      iterations: 200,
       setup: function (db, callback) {
         var docs = [];
         for (var i = 0; i < 100; i++) {
@@ -25776,32 +25713,9 @@ module.exports = function (opts) {
         db.get(commonUtils.createDocId(itr), done);
       }
     }, {
-      name: 'all-docs-skip-limit',
-      assertions: 1,
-      iterations: 50,
-      setup: function (db, callback) {
-        var docs = [];
-        for (var i = 0; i < 1000; i++) {
-          docs.push({_id : commonUtils.createDocId(i),
-            foo : 'bar', baz : 'quux'});
-        }
-        db.bulkDocs({docs : docs}, callback);
-      },
-      test: function (db, itr, docs, done) {
-        var tasks = [];
-        for (var i = 0; i < 10; i++) {
-          tasks.push(i);
-        }
-        Promise.all(tasks.map(function (doc, i) {
-          return db.allDocs({skip : i * 100, limit : 10});
-        })).then(function () {
-          done();
-        }, done);
-      }
-    }, {
       name: 'all-docs-startkey-endkey',
       assertions: 1,
-      iterations: 50,
+      iterations: 200,
       setup: function (db, callback) {
         var docs = [];
         for (var i = 0; i < 1000; i++) {
@@ -25821,35 +25735,10 @@ module.exports = function (opts) {
         Promise.all(tasks.map(function (doc, i) {
           return db.allDocs({
             startkey: commonUtils.createDocId(i * 100),
-            endkey: commonUtils.createDocId((i * 100) + 10)
+            endkey: commonUtils.createDocId((i * 100) + 10),
+            include_docs: true
           });
         })).then(function () {
-          done();
-        }, done);
-      }
-    }, {
-      name: 'all-docs-include-docs',
-      assertions: 1,
-      iterations: 100,
-      setup: function (db, callback) {
-        var docs = [];
-        for (var i = 0; i < 1000; i++) {
-          docs.push({
-            _id: commonUtils.createDocId(i),
-            foo: 'bar',
-            baz: 'quux',
-            _deleted: i % 2 === 1
-          });
-        }
-        db.bulkDocs({docs: docs}, callback);
-      },
-      test: function (db, itr, docs, done) {
-        return db.allDocs({
-          include_docs: true,
-          limit: 100
-        }).then(function () {
-          return db.post({}); // to invalidate the doc count
-        }).then(function () {
           done();
         }, done);
       }
@@ -25859,7 +25748,7 @@ module.exports = function (opts) {
   utils.runTests(PouchDB, 'basics', testCases, opts);
 };
 
-},{"./common-utils.js":73,"./utils":79,"pouchdb":42}],77:[function(require,module,exports){
+},{"./common-utils.js":73,"./utils":77,"pouchdb":42}],76:[function(require,module,exports){
 (function (process,global){
 'use strict';
 var isNode = process && !process.browser;
@@ -25920,156 +25809,7 @@ exports.complete = function () {
 
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"_process":44,"ua-parser-js":70}],78:[function(require,module,exports){
-'use strict';
-
-module.exports = function (PouchDB, opts) {
-
-  var utils = require('./utils');
-
-  function makeTestDocs() {
-    return [
-      {key: null},
-      {key: true},
-      {key: false},
-      {key: -1},
-      {key: 0},
-      {key: 1},
-      {key: 2},
-      {key: 3},
-      {key: Math.random()},
-      {key: 'bar' + Math.random()},
-      {key: 'foo' + Math.random()},
-      {key: 'foobar' + Math.random()}
-    ];
-  }
-
-  var testCases = [
-    {
-      name: 'temp-views',
-      assertions: 1,
-      iterations: 1,
-      setup: function (db, callback) {
-        var tasks = [];
-        for (var i = 0; i < 100; i++) {
-          tasks.push(i);
-        }
-        Promise.all(tasks.map(function () {
-          return db.bulkDocs({docs : makeTestDocs()});
-        })).then(function () {
-          callback();
-        }, callback);
-      },
-      test: function (db, itr, doc, done) {
-        var tasks = [
-          {startkey: 'foo', limit: 5},
-          {startkey: 'foobar', limit: 5},
-          {startkey: 'foo', limit: 5},
-          {startkey: -1, limit: 5},
-          {startkey: null, limit: 5}
-        ];
-        Promise.all(tasks.map(function (task) {
-          return db.query(function (doc) {
-            emit(doc.key);
-          }, task);
-        })).then(function () {
-          done();
-        }, done);
-      }
-    },
-    {
-      name: 'persisted-views',
-      assertions: 1,
-      iterations: 10,
-      setup: function (db, callback) {
-        var tasks = [];
-        for (var i = 0; i < 100; i++) {
-          tasks.push(i);
-        }
-        Promise.all(tasks.map(function () {
-          return db.bulkDocs({docs : makeTestDocs()});
-        })).then(function () {
-          return db.put({
-            _id : '_design/myview',
-            views : {
-              myview : {
-                map : function (doc) {
-                  emit(doc.key);
-                }.toString()
-              }
-            }
-          });
-        }).then(function () {
-          return db.query('myview/myview');
-        }).then(function () {
-          callback();
-        }, callback);
-      },
-      test: function (db, itr, doc, done) {
-        var tasks = [
-          {startkey: 'foo', limit: 5},
-          {startkey: 'foobar', limit: 5},
-          {startkey: 'foo', limit: 5},
-          {startkey: -1, limit: 5},
-          {startkey: null, limit: 5}
-        ];
-        Promise.all(tasks.map(function (task) {
-            return db.query('myview/myview', task);
-          })).then(function () {
-            done();
-          }, done);
-      }
-    },
-    {
-      name: 'persisted-views-stale-ok',
-      assertions: 1,
-      iterations: 10,
-      setup: function (db, callback) {
-        var tasks = [];
-        for (var i = 0; i < 100; i++) {
-          tasks.push(i);
-        }
-        Promise.all(tasks.map(function () {
-            return db.bulkDocs({docs : makeTestDocs()});
-          })).then(function () {
-            return db.put({
-              _id : '_design/myview',
-              views : {
-                myview : {
-                  map : function (doc) {
-                    emit(doc.key);
-                  }.toString()
-                }
-              }
-            });
-          }).then(function () {
-            return db.query('myview/myview');
-          }).then(function () {
-            callback();
-          }, callback);
-      },
-      test: function (db, itr, doc, done) {
-        var tasks = [
-          {startkey: 'foo', limit: 5, stale : 'ok'},
-          {startkey: 'foobar', limit: 5, stale : 'ok'},
-          {startkey: 'foo', limit: 5, stale : 'ok'},
-          {startkey: -1, limit: 5, stale : 'ok'},
-          {startkey: null, limit: 5, stale : 'ok'}
-        ];
-        Promise.all(tasks.map(function (task) {
-            return db.query('myview/myview', task);
-          })).then(function () {
-            done();
-          }, done);
-      }
-    }
-  ];
-
-  utils.runTests(PouchDB, 'views', testCases, opts);
-
-};
-
-},{"./utils":79}],79:[function(require,module,exports){
+},{"_process":44,"ua-parser-js":70}],77:[function(require,module,exports){
 (function (process,global){
 'use strict';
 
@@ -26164,4 +25904,4 @@ exports.runTests = function (PouchDB, suiteName, testCases, opts) {
 };
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./common-utils.js":73,"./perf.reporter":77,"_process":44,"tape":65}]},{},[74]);
+},{"./common-utils.js":73,"./perf.reporter":76,"_process":44,"tape":65}]},{},[74]);

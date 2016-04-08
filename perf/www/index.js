@@ -17,8 +17,6 @@ function runTestSuites() {
     '\n\n');
 
   require('./perf.basics')(opts);
-  require('./perf.views')(opts);
-  require('./perf.attachments')(opts);
 }
 
 document.addEventListener('deviceready', runTestSuites, false);
