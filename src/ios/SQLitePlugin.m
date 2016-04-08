@@ -106,31 +106,32 @@
     NSString *dbName = [command.arguments objectAtIndex:0];
     NSArray *sqlQueries = [command.arguments objectAtIndex:1];
     BOOL readOnly = [[command.arguments objectAtIndex:2] boolValue];
-    long length = [sqlQueries count];
+    long numQueries = [sqlQueries count];
     SQLitePluginResult *sqlResult;
     int i;
     logDebug(@"dbName: %@", dbName);
     @synchronized(self) {
         NSValue *databasePointer = [self openDatabase:dbName];
         sqlite3 *db = [databasePointer pointerValue];
-        NSMutableArray *sqlResults = [NSMutableArray arrayWithCapacity:0];
-        
+        NSMutableArray *sqlResults = [NSMutableArray arrayWithCapacity:numQueries];
+
         // execute queries
-        for (i = 0; i < length; i++) {
+        for (i = 0; i < numQueries; i++) {
             NSArray *sqlQueryObject = [sqlQueries objectAtIndex:i];
             NSString *sql = [sqlQueryObject objectAtIndex:0];
             NSArray *sqlArgs = [sqlQueryObject objectAtIndex:1];
             logDebug(@"sql: %@", sql);
             logDebug(@"sqlArgs: %@", sqlArgs);
             sqlResult = [self executeSql:sql withSqlArgs:sqlArgs withDb: db withReadOnly: readOnly];
+            logDebug(@"sqlResult: %@", sqlResult);
             [sqlResults addObject:sqlResult];
         }
-        
+
         // transform results back into plain arrays
-        NSMutableArray *finalResult = [NSMutableArray arrayWithCapacity:0];
-        for (i = 0; i < length; i++) {
+        NSMutableArray *finalResult = [NSMutableArray arrayWithCapacity:numQueries];
+        for (i = 0; i < numQueries; i++) {
             sqlResult = [sqlResults objectAtIndex:i];
-            
+
             NSString *error = sqlResult.error;
             if (error != nil) {
                 NSArray *result = @[error, [NSNull null], [NSNull null], [NSNull null], [NSNull null]];
@@ -144,12 +145,12 @@
                 [finalResult addObject:result];
             }
         }
-        
+
         // send the result back to Cordova
         CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsArray:finalResult];
         [self.commandDelegate sendPluginResult:pluginResult callbackId: command.callbackId];
     }
-    
+
 }
 
 -(NSObject*) getSqlValueForColumnType: (int)columnType withStatement: (sqlite3_stmt*)statement withIndex: (int)i {
@@ -174,17 +175,14 @@
     logDebug(@"executeSql sql: %@", sql);
     NSString *error = nil;
     sqlite3_stmt *statement;
-    int i;
-    int newRowsAffected;
-    int diffRowsAffected;
-    long long currentInsertId;
     SQLitePluginResult *resultSet = [SQLitePluginResult alloc];
     NSMutableArray *resultRows = [NSMutableArray arrayWithCapacity:0];
     NSMutableArray *entry;
-    
-    NSNumber *insertId;
-    NSNumber *rowsAffected;
-    
+    long insertId = 0;
+    int rowsAffected = 0;
+    int i;
+
+
     // compile the statement, throw an error if necessary
     logDebug(@"sqlite3_prepare_v2");
     if (sqlite3_prepare_v2(db, [sql UTF8String], -1, &statement, NULL) != SQLITE_OK) {
@@ -194,23 +192,27 @@
         [resultSet setError:error];
         return resultSet;
     }
-    
-    if (readOnly && !sqlite3_stmt_readonly(statement)) {
+
+    bool queryIsReadOnly = sqlite3_stmt_readonly(statement);
+    if (readOnly && !queryIsReadOnly) {
         error = [NSString stringWithFormat:@"could not prepare %@", sql];
         [resultSet setError:error];
         return resultSet;
     }
-    
+
     // bind any arguments
-    if (sqlArgs != NULL) {
+    if (sqlArgs != nil) {
         for (i = 0; i < sqlArgs.count; i++) {
             [self bindStatement:statement withArg:[sqlArgs objectAtIndex:i] atIndex:(i + 1)];
         }
     }
-    
-    // calculate the total changes in order to diff later
-    int previousRowsAffected = sqlite3_total_changes(db);
-    
+
+    int previousRowsAffected;
+    if (!queryIsReadOnly) {
+        // calculate the total changes in order to diff later
+        previousRowsAffected = sqlite3_total_changes(db);
+    }
+
     // iterate through sql results
     int columnCount;
     NSMutableArray *columnNames = [NSMutableArray arrayWithCapacity:0];
@@ -218,10 +220,9 @@
     NSString *columnName;
     int columnType;
     BOOL fetchedColumns = NO;
-    BOOL hasInsertId = NO;
-    BOOL hasMore = YES;
     int result;
     NSObject *columnValue;
+    BOOL hasMore = YES;
     while (hasMore) {
         logDebug(@"sqlite3_step");
         result = sqlite3_step (statement);
@@ -230,6 +231,7 @@
                 if (!fetchedColumns) {
                     // get all column names and column types once as the beginning
                     columnCount = sqlite3_column_count(statement);
+
                     for (i = 0; i < columnCount; i++) {
                         columnName = [NSString stringWithFormat:@"%s", sqlite3_column_name(statement, i)];
                         columnType = sqlite3_column_type(statement, i);
@@ -238,7 +240,7 @@
                     }
                     fetchedColumns = YES;
                 }
-                entry = [NSMutableArray arrayWithCapacity:0];
+                entry = [NSMutableArray arrayWithCapacity:columnCount];
                 for (i = 0; i < columnCount; i++) {
                     columnType = [[columnTypes objectAtIndex:i] intValue];
                     columnValue = [self getSqlValueForColumnType:columnType withStatement:statement withIndex: i];
@@ -247,37 +249,32 @@
                 [resultRows addObject:entry];
                 break;
             case SQLITE_DONE:
-                newRowsAffected = sqlite3_total_changes(db);
-                diffRowsAffected = newRowsAffected - previousRowsAffected;
-                rowsAffected = [NSNumber numberWithInt:(newRowsAffected - previousRowsAffected)];
-                currentInsertId = sqlite3_last_insert_rowid(db);
-                if (newRowsAffected > 0 && currentInsertId != 0) {
-                    hasInsertId = YES;
-                    insertId = [NSNumber numberWithLongLong:sqlite3_last_insert_rowid(db)];
-                }
                 hasMore = NO;
                 break;
-                
             default:
                 error = [SQLitePlugin convertSQLiteErrorToString:db];
                 hasMore = NO;
+                break;
         }
     }
-    
+
+    if (!queryIsReadOnly) {
+        rowsAffected = (sqlite3_total_changes(db) - previousRowsAffected);
+        if (rowsAffected > 0) {
+            insertId = sqlite3_last_insert_rowid(db);
+        }
+    }
+
     logDebug(@"sqlite3_finalize");
     sqlite3_finalize (statement);
-    
+
     if (error) {
         [resultSet setError:error];
     } else {
         [resultSet setRows:resultRows];
         [resultSet setColumns:columnNames];
-        [resultSet setRowsAffected:rowsAffected];
-        if (hasInsertId) {
-            [resultSet setInsertId:insertId];
-        } else {
-            [resultSet setInsertId:[NSNumber numberWithInt:0]];
-        }
+        [resultSet setRowsAffected:[NSNumber numberWithInt:rowsAffected]];
+        [resultSet setInsertId:[NSNumber numberWithLong:insertId]];
     }
     
     logDebug(@"done executeSql sql: %@", sql);
