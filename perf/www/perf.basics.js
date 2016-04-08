@@ -70,7 +70,7 @@ module.exports = function (opts) {
     }, {
       name: 'all-docs-startkey-endkey',
       assertions: 1,
-      iterations: 200,
+      iterations: 100,
       setup: function (db, callback) {
         var docs = [];
         for (var i = 0; i < 1000; i++) {
