@@ -25942,15 +25942,36 @@ module.exports = function (opts) {
       assertions: 1,
       iterations: 4000,
       setup: function (db, callback) {
+        if (!window.statuses) {
+          window.statuses = [];
+        }
         var docs = [];
         for (var i = 0; i < 10000; i++) {
           docs.push({_id : commonUtils.createDocId(i),
             foo : 'bar', baz : 'quux'});
         }
-        db.bulkDocs({docs : docs}, callback);
+        window.statuses.push('doing bulkDocs');
+        db.bulkDocs({docs : docs}, function (err) {
+          window.statuses.push('done');
+          if (err) {
+            alert(err);
+          }
+          callback(err);
+        });
       },
       test: function (db, itr, docs, done) {
-        db.get(commonUtils.createDocId(itr), done);
+        window.statuses.push('doing get');
+        try {
+          db.get(commonUtils.createDocId(itr), function (err) {
+            window.statuses.push('done');
+            if (err) {
+              alert(err);
+            }
+            done(err);
+          });
+        } catch (e) {
+          statuses.push(e);
+        }
       }
     }, {
       name: 'all-docs-startkey-endkey',
