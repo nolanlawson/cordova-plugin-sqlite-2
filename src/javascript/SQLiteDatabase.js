@@ -29,11 +29,6 @@ function dearrayifyRow(res) {
   return new SQLiteResult(error, insertId, rowsAffected, zippedRows);
 }
 
-// send less data over the wire, use an array
-function arrayifyQuery(query) {
-  return [query.sql, (query.args || [])];
-}
-
 SQLiteDatabase.prototype.exec = function exec(queries, readOnly, callback) {
 
   function onSuccess(rawResults) {
@@ -50,7 +45,7 @@ SQLiteDatabase.prototype.exec = function exec(queries, readOnly, callback) {
 
   cordova.exec(onSuccess, onError, 'SQLitePlugin', 'exec', [
     this._name,
-    queries.map(arrayifyQuery),
+    queries,
     readOnly
   ]);
 };
