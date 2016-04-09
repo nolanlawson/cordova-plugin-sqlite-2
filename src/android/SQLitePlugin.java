@@ -77,9 +77,9 @@ public class SQLitePlugin extends CordovaPlugin {
     SQLiteDatabase db = getDatabase(dbName);
 
     for (int i = 0; i < numQueries; i++) {
-      JSONArray sqlQuery = queries.getJSONArray(i);
-      String sql = sqlQuery.getString(0);
-      String[] bindArgs = jsonArrayToStringArray(sqlQuery.getJSONArray(1));
+      JSONObject sqlQuery = queries.getJSONObject(i);
+      String sql = sqlQuery.getString("sql");
+      String[] bindArgs = jsonArrayToStringArray(sqlQuery.getJSONArray("args"));
       try {
         if (isSelect(sql)) {
           results[i] = doSelectInBackgroundAndPossiblyThrow(sql, bindArgs, db);
@@ -225,17 +225,17 @@ public class SQLitePlugin extends CordovaPlugin {
   }
 
   private static void appendPluginResult(SQLitePLuginResult result, StringBuilder sb) throws JSONException {
-    sb.append('[');
+    sb.append("{\"error\":");
     if (result.error == null) {
       sb.append("null");
     } else {
       sb.append(JSONObject.quote(result.error.getMessage()));
     }
-    sb.append(',')
+    sb.append(",\"insertId\":")
         .append(JSONObject.numberToString(result.insertId))
-        .append(',')
+        .append(",\"rowsAffected\":")
         .append(JSONObject.numberToString(result.rowsAffected))
-        .append(',');
+        .append(",\"columns\":");
 
     // column names
     sb.append('[');
@@ -245,7 +245,7 @@ public class SQLitePlugin extends CordovaPlugin {
       }
       sb.append(JSONObject.quote(result.columns[i]));
     }
-    sb.append("],[");
+    sb.append("],\"rows\":[");
     // rows
     for (int i = 0; i < result.rows.length; i++) {
       if (i > 0) {
@@ -271,7 +271,7 @@ public class SQLitePlugin extends CordovaPlugin {
       }
       sb.append(']');
     }
-    sb.append("]]");
+    sb.append("]}");
 
     debug("returning json: %s", sb);
   }

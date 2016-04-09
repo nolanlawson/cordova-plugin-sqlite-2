@@ -10,17 +10,17 @@ function SQLiteDatabase(name) {
   this._name = name;
 }
 
-function dearrayifyRow(res) {
+function parseRow(res) {
   // use a compressed array format to send minimal data between
   // native and web layers
-  var error = massageError(res[0]);
-  var insertId = res[1];
+  var error = massageError(res.error);
+  var insertId = res.insertId;
   if (insertId === null) {
     insertId = void 0; // per the spec, should be undefined
   }
-  var rowsAffected = res[2];
-  var columns = res[3];
-  var rows = res[4];
+  var rowsAffected = res.rowsAffected || 0;
+  var columns = res.columns || [];
+  var rows = res.rows || [];
   var zippedRows = map(rows, function (row) {
     return zipObject(columns, row);
   });
@@ -29,18 +29,13 @@ function dearrayifyRow(res) {
   return new SQLiteResult(error, insertId, rowsAffected, zippedRows);
 }
 
-// send less data over the wire, use an array
-function arrayifyQuery(query) {
-  return [query.sql, (query.args || [])];
-}
-
 SQLiteDatabase.prototype.exec = function exec(queries, readOnly, callback) {
 
   function onSuccess(rawResults) {
     if (typeof rawResults === 'string') {
       rawResults = JSON.parse(rawResults);
     }
-    var results = map(rawResults, dearrayifyRow);
+    var results = map(rawResults, parseRow);
     callback(null, results);
   }
 
@@ -50,7 +45,7 @@ SQLiteDatabase.prototype.exec = function exec(queries, readOnly, callback) {
 
   cordova.exec(onSuccess, onError, 'SQLitePlugin', 'exec', [
     this._name,
-    queries.map(arrayifyQuery),
+    queries,
     readOnly
   ]);
 };
