@@ -87,9 +87,9 @@
 
         // execute queries
         for (i = 0; i < numQueries; i++) {
-            NSArray *sqlQueryObject = [sqlQueries objectAtIndex:i];
-            NSString *sql = [sqlQueryObject objectAtIndex:0];
-            NSArray *sqlArgs = [sqlQueryObject objectAtIndex:1];
+            NSDictionary *sqlQueryObject = [sqlQueries objectAtIndex:i];
+            NSString *sql = [sqlQueryObject objectForKey:@"sql"];
+            NSArray *sqlArgs = [sqlQueryObject objectForKey:@"args"];
             logDebug(@"sql: %@", sql);
             logDebug(@"sqlArgs: %@", sqlArgs);
             sqlResult = [self executeSql:sql withSqlArgs:sqlArgs withDb: db withReadOnly: readOnly];

@@ -77,9 +77,9 @@ public class SQLitePlugin extends CordovaPlugin {
     SQLiteDatabase db = getDatabase(dbName);
 
     for (int i = 0; i < numQueries; i++) {
-      JSONArray sqlQuery = queries.getJSONArray(i);
-      String sql = sqlQuery.getString(0);
-      String[] bindArgs = jsonArrayToStringArray(sqlQuery.getJSONArray(1));
+      JSONObject sqlQuery = queries.getJSONObject(i);
+      String sql = sqlQuery.getString("sql");
+      String[] bindArgs = jsonArrayToStringArray(sqlQuery.getJSONArray("args"));
       try {
         if (isSelect(sql)) {
           results[i] = doSelectInBackgroundAndPossiblyThrow(sql, bindArgs, db);
