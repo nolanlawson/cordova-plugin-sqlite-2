@@ -127,7 +127,7 @@
     NSString *error = nil;
     sqlite3_stmt *statement;
     NSMutableArray *resultRows = [NSMutableArray arrayWithCapacity:0];
-    NSMutableArray *entry;
+    NSMutableDictionary *entry;
     long insertId = 0;
     int rowsAffected = 0;
     int i;
@@ -188,11 +188,11 @@
                     }
                     fetchedColumns = YES;
                 }
-                entry = [NSMutableArray arrayWithCapacity:columnCount];
+                entry = [NSMutableDictionary dictionaryWithCapacity:columnCount];
                 for (i = 0; i < columnCount; i++) {
                     columnType = [[columnTypes objectAtIndex:i] intValue];
                     columnValue = [self getSqlValueForColumnType:columnType withStatement:statement withIndex: i];
-                    [entry addObject:columnValue];
+                    [entry setObject:columnValue forKey:[columnNames objectAtIndex:i]];
                 }
                 [resultRows addObject:entry];
                 break;
@@ -219,11 +219,13 @@
     if (error) {
         return @[error];
     }
+
+
+
     return @[
              [NSNull null],
              [NSNumber numberWithLong:insertId],
              [NSNumber numberWithInt:rowsAffected],
-             columnNames,
              resultRows
              ];
 }
