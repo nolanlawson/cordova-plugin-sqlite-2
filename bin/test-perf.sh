@@ -13,6 +13,8 @@ set -v
 CORDOVA=$(pwd)/node_modules/.bin/cordova
 BROWSERIFY=$(pwd)/node_modules/.bin/browserify
 
+npm run build
+
 # disabling while pouchdb doesn't pass the "location" option to
 # the old SQLite Plugin. instead, just check bundle.js into git.
 $BROWSERIFY perf/www/index.js > perf/www/bundle.js
