@@ -54,7 +54,7 @@ SQLiteDatabase.prototype.exec = function exec(queries, readOnly, callback) {
 
   cordova.exec(onSuccess, onError, 'SQLitePlugin', 'exec', [
     this._name,
-    queries.map(arrayifyQuery),
+    map(queries, arrayifyQuery),
     readOnly
   ]);
 };
