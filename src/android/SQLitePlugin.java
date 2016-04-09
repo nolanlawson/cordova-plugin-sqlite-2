@@ -237,15 +237,7 @@ public class SQLitePlugin extends CordovaPlugin {
         .append(JSONObject.numberToString(result.rowsAffected))
         .append(',');
 
-    // column names
     sb.append('[');
-    for (int i = 0; i < result.columns.length; i++) {
-      if (i > 0) {
-        sb.append(',');
-      }
-      sb.append(JSONObject.quote(result.columns[i]));
-    }
-    sb.append("],[");
     // rows
     for (int i = 0; i < result.rows.length; i++) {
       if (i > 0) {
@@ -253,11 +245,13 @@ public class SQLitePlugin extends CordovaPlugin {
       }
       Object[] values = result.rows[i];
       // row content
-      sb.append('[');
+      sb.append('{');
       for (int j = 0; j < values.length; j++) {
         if (j > 0) {
           sb.append(',');
         }
+        String key = result.columns[j];
+        sb.append(JSONObject.quote(key)).append(":");
         Object value = values[j];
         if (value == null) {
           sb.append("null");
@@ -269,7 +263,7 @@ public class SQLitePlugin extends CordovaPlugin {
           sb.append(JSONObject.numberToString((Number)value));
         }
       }
-      sb.append(']');
+      sb.append('}');
     }
     sb.append("]]");
 
