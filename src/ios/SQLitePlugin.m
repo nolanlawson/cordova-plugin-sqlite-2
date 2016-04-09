@@ -15,35 +15,6 @@
 #   define logDebug(...)
 #endif
 
-@interface SQLitePluginResult : NSObject {
-}
-
-@property(nonatomic, copy) NSArray* rows;
-@property(nonatomic, copy) NSArray* columns;
-@property(nonatomic, copy) NSNumber* rowsAffected;
-@property(nonatomic, copy) NSNumber* insertId;
-@property(nonatomic, copy) NSString* error;
-
-@end
-
-@implementation SQLitePluginResult
-
-@synthesize rows;
-@synthesize columns;
-@synthesize rowsAffected;
-@synthesize insertId;
-@synthesize error;
-
--(void)dealloc {
-    [self setRows:nil];
-    [self setColumns:nil];
-    [self setRowsAffected:nil];
-    [self setInsertId:nil];
-    [self setError:nil];
-}
-
-@end
-
 @implementation SQLitePlugin
 
 @synthesize cachedDatabases;
@@ -62,7 +33,7 @@
 }
 
 -(id) getPathForDB:(NSString *)dbName {
-    
+
     // special case for in-memory databases
     if ([dbName isEqualToString:@":memory:"]) {
         return dbName;
@@ -92,22 +63,21 @@
     return cachedDB;
 }
 
--(void) exec: (CDVInvokedUrlCommand*)command
-{
+-(void) exec: (CDVInvokedUrlCommand*)command {
+
     logDebug(@"exec()");
     [self.commandDelegate runInBackground:^{
         [self execOnBackgroundThread: command];
     }];
 }
 
--(void) execOnBackgroundThread: (CDVInvokedUrlCommand *)command
-{
+-(void) execOnBackgroundThread: (CDVInvokedUrlCommand *)command {
     logDebug(@"execOnBackgroundThread()");
     NSString *dbName = [command.arguments objectAtIndex:0];
     NSArray *sqlQueries = [command.arguments objectAtIndex:1];
     BOOL readOnly = [[command.arguments objectAtIndex:2] boolValue];
     long numQueries = [sqlQueries count];
-    SQLitePluginResult *sqlResult;
+    NSArray *sqlResult;
     int i;
     logDebug(@"dbName: %@", dbName);
     @synchronized(self) {
@@ -127,27 +97,8 @@
             [sqlResults addObject:sqlResult];
         }
 
-        // transform results back into plain arrays
-        NSMutableArray *finalResult = [NSMutableArray arrayWithCapacity:numQueries];
-        for (i = 0; i < numQueries; i++) {
-            sqlResult = [sqlResults objectAtIndex:i];
-
-            NSString *error = sqlResult.error;
-            if (error != nil) {
-                NSArray *result = @[error, [NSNull null], [NSNull null], [NSNull null], [NSNull null]];
-                [finalResult addObject:result];
-            } else {
-                NSArray *columns = sqlResult.columns;
-                NSArray *rows = sqlResult.rows;
-                NSNumber *rowsAffected = sqlResult.rowsAffected;
-                NSNumber *insertId = sqlResult.insertId;
-                NSArray *result = @[[NSNull null], insertId, rowsAffected, columns, rows];
-                [finalResult addObject:result];
-            }
-        }
-
         // send the result back to Cordova
-        CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsArray:finalResult];
+        CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsArray:sqlResults];
         [self.commandDelegate sendPluginResult:pluginResult callbackId: command.callbackId];
     }
 
@@ -168,14 +119,13 @@
     return [NSNull null];
 }
 
--(SQLitePluginResult*) executeSql: (NSString*)sql
-                       withSqlArgs: (NSArray*)sqlArgs
-                       withDb: (sqlite3*)db
-                       withReadOnly: (BOOL)readOnly {
+-(NSArray*) executeSql: (NSString*)sql
+                      withSqlArgs: (NSArray*)sqlArgs
+                           withDb: (sqlite3*)db
+                     withReadOnly: (BOOL)readOnly {
     logDebug(@"executeSql sql: %@", sql);
     NSString *error = nil;
     sqlite3_stmt *statement;
-    SQLitePluginResult *resultSet = [SQLitePluginResult alloc];
     NSMutableArray *resultRows = [NSMutableArray arrayWithCapacity:0];
     NSMutableArray *entry;
     long insertId = 0;
@@ -189,15 +139,13 @@
         error = [SQLitePlugin convertSQLiteErrorToString:db];
         logDebug(@"prepare error!");
         logDebug(@"error: %@", error);
-        [resultSet setError:error];
-        return resultSet;
+        return @[error];
     }
 
     bool queryIsReadOnly = sqlite3_stmt_readonly(statement);
     if (readOnly && !queryIsReadOnly) {
         error = [NSString stringWithFormat:@"could not prepare %@", sql];
-        [resultSet setError:error];
-        return resultSet;
+        return @[error];
     }
 
     // bind any arguments
@@ -269,20 +217,19 @@
     sqlite3_finalize (statement);
 
     if (error) {
-        [resultSet setError:error];
-    } else {
-        [resultSet setRows:resultRows];
-        [resultSet setColumns:columnNames];
-        [resultSet setRowsAffected:[NSNumber numberWithInt:rowsAffected]];
-        [resultSet setInsertId:[NSNumber numberWithLong:insertId]];
+        return @[error];
     }
-    
-    logDebug(@"done executeSql sql: %@", sql);
-    return resultSet;
+    return @[
+             [NSNull null],
+             [NSNumber numberWithLong:insertId],
+             [NSNumber numberWithInt:rowsAffected],
+             columnNames,
+             resultRows
+             ];
 }
 
--(void)bindStatement:(sqlite3_stmt *)statement withArg:(NSObject *)arg atIndex:(int)argIndex
-{
+-(void)bindStatement:(sqlite3_stmt *)statement withArg:(NSObject *)arg atIndex:(int)argIndex {
+
     if ([arg isEqual:[NSNull null]]) {
         sqlite3_bind_null(statement, argIndex);
     } else if ([arg isKindOfClass:[NSNumber class]]) {
@@ -324,8 +271,8 @@
     }
 }
 
-+(NSString *)convertSQLiteErrorToString:(struct sqlite3 *)db
-{
++(NSString *)convertSQLiteErrorToString:(struct sqlite3 *)db {
+
     int code = sqlite3_errcode(db);
     const char *cMessage = sqlite3_errmsg(db);
     NSString *message = [[NSString alloc] initWithUTF8String: cMessage];

@@ -1,6 +1,6 @@
 import map from 'lodash.map';
-import zipObject from 'lodash.zipobject';
 import SQLiteResult from './SQLiteResult';
+import zipObject from 'lodash.zipObject';
 
 function massageError(err) {
   return typeof err === 'string' ? new Error(err) : err;
@@ -13,7 +13,10 @@ function SQLiteDatabase(name) {
 function dearrayifyRow(res) {
   // use a compressed array format to send minimal data between
   // native and web layers
-  var error = massageError(res[0]);
+  var rawError = res[0];
+  if (rawError) {
+    return new SQLiteResult(massageError(res[0]));
+  }
   var insertId = res[1];
   if (insertId === null) {
     insertId = void 0; // per the spec, should be undefined
@@ -21,12 +24,13 @@ function dearrayifyRow(res) {
   var rowsAffected = res[2];
   var columns = res[3];
   var rows = res[4];
-  var zippedRows = map(rows, function (row) {
-    return zipObject(columns, row);
-  });
+  var zippedRows = [];
+  for (var i = 0, len = rows.length; i < len; i++) {
+    zippedRows.push(zipObject(columns, rows[i]));
+  }
 
   // v8 likes predictable objects
-  return new SQLiteResult(error, insertId, rowsAffected, zippedRows);
+  return new SQLiteResult(null, insertId, rowsAffected, zippedRows);
 }
 
 // send less data over the wire, use an array
