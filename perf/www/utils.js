@@ -31,7 +31,7 @@ exports.runTests = function (PouchDB, suiteName, testCases, opts) {
       var db;
       var setupObj;
 
-      var localDbName = commonUtils.safeRandomDBName();
+      var localDbName = 'perftestdb';
 
       t.test('setup', function (t) {
         opts.size = 3000;

@@ -7,7 +7,7 @@ if (!global.Promise) {
 
 var PouchDB = require('pouchdb');
 
-var opts = {adapter: 'websql'};
+var opts = {adapter: 'websql', size: 50000000, location: 'default'};
 
 function runTestSuites() {
   var reporter = require('./perf.reporter');

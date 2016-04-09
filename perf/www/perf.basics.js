@@ -11,7 +11,7 @@ module.exports = function (opts) {
     {
       name: 'basic-inserts',
       assertions: 1,
-      iterations: 2000,
+      iterations: 8000,
       setup: function (db, callback) {
         callback(null, {'yo': 'dawg'});
       },
@@ -21,7 +21,7 @@ module.exports = function (opts) {
     }, {
       name: 'bulk-inserts',
       assertions: 1,
-      iterations: 500,
+      iterations: 2000,
       setup: function (db, callback) {
         var docs = [];
         for (var i = 0; i < 100; i++) {
@@ -35,7 +35,7 @@ module.exports = function (opts) {
     }, {
       name: 'basic-gets',
       assertions: 1,
-      iterations: 4000,
+      iterations: 10000,
       setup: function (db, callback) {
         var docs = [];
         for (var i = 0; i < 10000; i++) {
@@ -50,7 +50,7 @@ module.exports = function (opts) {
     }, {
       name: 'all-docs-startkey-endkey',
       assertions: 1,
-      iterations: 400,
+      iterations: 25000,
       setup: function (db, callback) {
         var docs = [];
         for (var i = 0; i < 1000; i++) {
