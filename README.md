@@ -8,7 +8,7 @@ in a Cordova/PhoneGap/Ionic app, by using a SQLite database on the native side. 
 benefits are:
 
 1. unlimited and durable storage
-2. pre-populated databases
+2. prepopulated databases
 3. support where WebSQL isn't available ([namely iOS WKWebView](https://bugs.webkit.org/show_bug.cgi?id=137760))
 
 **Note:** if you can avoid using this plugin in favor of [IndexedDB](http://w3c.github.io/IndexedDB/) (or regular WebSQL), then you should.
@@ -110,6 +110,20 @@ On iOS, this plugin is quite a bit slower than native WebSQL, due to the overhea
 On both iOS and Android, this plugin can also be considered useful if you need huge
 amounts of storage, or prepopulated databases.
 
+How do I create a prepopulated database?
+-----
+
+Follow these steps:
+
+1. Put your database file (e.g. `mydatabase.db`) in `www/`.
+
+2. Install [the Cordova file plugin](https://github.com/apache/cordova-plugin-file).
+
+3. Copy the file from the read-only `www/` subdirectory in `cordova.file.applicationDirectory` 
+to the read-write `cordova.file.dataDirectory`, using the Cordova file plugin APIs.
+
+For more details, check out the [prepopulated database demo app](cordova-prepopulated-database-demo).
+
 Where is data stored?
 ----
 
@@ -120,7 +134,8 @@ via:
 File dir = getContext().getFilesDir();
 ```
 
-On iOS, it's in `Library/NoCloud/`, following [the Cordova file plugin](https://github.com/apache/cordova-plugin-file) (and [unlike the original SQLite Plugin](https://github.com/litehelpers/Cordova-sqlite-storage/issues/430)).
+On iOS, it's in `Library/NoCloud/`, following [the Cordova file plugin](https://github.com/apache/cordova-plugin-file) 
+convention (and [unlike the original SQLite Plugin](https://github.com/litehelpers/Cordova-sqlite-storage/issues/430)).
 It can be accessed natively via:
 
 ```objective-c
@@ -130,25 +145,12 @@ NSString *dir = [
   stringByAppendingPathComponent:@"NoCloud"];
 ```
 
-Any database you store in there is accessible by name, so it can be used for
-preloading. E.g. a database called `foo.db` can be accessed via:
+Any database you store in there is accessible directly by filename.
+E.g. if your file is called `foo.db`, then you open it with:
 
 ```js
 var db = sqlitePlugin.openDatabase('foo.db', '1.0', '', 1);
 ```
-
-How do I create a prepopulated database?
------
-
-Follow these steps:
-
-1. Put your database file (e.g. `mydatabase.db`) in `www/`.
-
-2. Install [the Cordova file plugin](https://github.com/apache/cordova-plugin-file).
-
-3. Copy the file from `www/` to `cordova.file.dataDirectory` using the file plugin APIs.
-
-For more details, check out the [prepopulated database demo app](cordova-prepopulated-database-demo).
 
 Building
 ---
