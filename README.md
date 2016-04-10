@@ -119,10 +119,10 @@ Follow these steps:
 
 2. Install [the Cordova file plugin](https://github.com/apache/cordova-plugin-file).
 
-3. Copy the file from the read-only `www/` subdirectory in `cordova.file.applicationDirectory` 
+3. Copy the file from the read-only `www/` subdirectory in `cordova.file.applicationDirectory`
 to the read-write `cordova.file.dataDirectory`, using the Cordova file plugin APIs.
 
-For more details, check out the [prepopulated database demo app](cordova-prepopulated-database-demo).
+For more details, check out the [prepopulated database demo app](https://github.com/nolanlawson/cordova-prepopulated-database-demo).
 
 Where is data stored?
 ----
