@@ -36,14 +36,20 @@ db.transaction(function (txn) {
 });
 ```
 
-Only the first argument to `openDatabase()` (the database name) is used.
-The other values may be provided for backwards compatibility with WebSQL, but are ignored and not required.
+Only the first argument to `openDatabase()` (the database name) is required.
+The other values may be provided for backwards compatibility with WebSQL, but are ignored.
 
 You can also pass in a single options object with the `name` key. This is for compatibility
 with the old SQLite Plugin, although it is non-standard with respect to WebSQL:
 
 ```js
 var db = sqlitePlugin.openDatabase({name: 'mydb.db'});
+```
+
+You can also create an in-memory SQLite database like so:
+
+```js
+var db = sqlitePlugin.openDatabase(':memory:');
 ```
 
 For a tutorial on how to use WebSQL, check out [the HTML5 Rocks article](http://www.html5rocks.com/en/tutorials/webdatabase/todo/) or [the HTML5 Doctor article](http://html5doctor.com/introducing-web-sql-databases/).
