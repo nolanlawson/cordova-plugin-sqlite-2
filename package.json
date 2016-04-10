@@ -1,6 +1,6 @@
 {
   "name": "cordova-plugin-sqlite-2",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Cordova SQLite Plugin 2",
   "scripts": {
     "build": "rimraf dist && mkdirp dist && browserify -t rollupify -s sqlitePlugin src/javascript/index.js > dist/sqlite-plugin.js",
