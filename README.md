@@ -120,13 +120,14 @@ via:
 File dir = getContext().getFilesDir();
 ```
 
-On iOS, it's in the `NSLibraryDirectory` under `LocalDatabase/` (ala [the original SQLite Plugin](https://github.com/litehelpers/Cordova-sqlite-storage/issues/430)). It can be accessed natively via:
+On iOS, it's in `Library/NoCloud/`, following [the Cordova file plugin](https://github.com/apache/cordova-plugin-file) (and [unlike the original SQLite Plugin](https://github.com/litehelpers/Cordova-sqlite-storage/issues/430)).
+It can be accessed natively via:
 
 ```objective-c
 NSString *dir = [
   [NSSearchPathForDirectoriesInDomains(NSLibraryDirectory, NSUserDomainMask, YES)
     objectAtIndex: 0]
-  stringByAppendingPathComponent:@"LocalDatabase"];
+  stringByAppendingPathComponent:@"NoCloud"];
 ```
 
 Any database you store in there is accessible by name, so it can be used for
@@ -135,6 +136,19 @@ preloading. E.g. a database called `foo.db` can be accessed via:
 ```js
 var db = sqlitePlugin.openDatabase('foo.db', '1.0', '', 1);
 ```
+
+How do I create a prepopulated database?
+-----
+
+Follow these steps:
+
+1. Put your database file (e.g. `mydatabase.db`) in `www/`.
+
+2. Install [the Cordova file plugin](https://github.com/apache/cordova-plugin-file).
+
+3. Copy the file from `www/` to `cordova.file.dataDirectory` using the file plugin APIs.
+
+For more details, check out the [prepopulated database demo app](cordova-prepopulated-database-demo).
 
 Building
 ---

@@ -23,13 +23,22 @@
     logDebug(@"pluginInitialize()");
     cachedDatabases = [NSMutableDictionary dictionaryWithCapacity:0];
     NSString *dbDir = [self getDatabaseDir];
+
+    // create "NoCloud" if it doesn't exist
     [[NSFileManager defaultManager] createDirectoryAtPath: dbDir
-                              withIntermediateDirectories:NO attributes: nil error:nil];
+                              withIntermediateDirectories: NO
+                                               attributes: nil
+                                                    error: nil];
+    // make it non-syncable to iCloud
+    NSURL *url = [ NSURL fileURLWithPath: dbDir];
+    [url setResourceValue: [NSNumber numberWithBool: YES]
+                   forKey: NSURLIsExcludedFromBackupKey
+                    error: nil];
 }
 
 -(NSString*) getDatabaseDir {
     NSString *libDir = [NSSearchPathForDirectoriesInDomains(NSLibraryDirectory, NSUserDomainMask, YES) objectAtIndex: 0];
-    return [libDir stringByAppendingPathComponent:@"LocalDatabase"];
+    return [libDir stringByAppendingPathComponent:@"NoCloud"];
 }
 
 -(id) getPathForDB:(NSString *)dbName {
