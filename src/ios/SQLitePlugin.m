@@ -77,7 +77,7 @@
     NSArray *sqlQueries = [command.arguments objectAtIndex:1];
     BOOL readOnly = [[command.arguments objectAtIndex:2] boolValue];
     long numQueries = [sqlQueries count];
-    NSArray *sqlResult;
+    NSDictionary *sqlResult;
     int i;
     logDebug(@"dbName: %@", dbName);
     @synchronized(self) {
@@ -119,10 +119,10 @@
     return [NSNull null];
 }
 
--(NSArray*) executeSql: (NSString*)sql
-                      withSqlArgs: (NSArray*)sqlArgs
-                           withDb: (sqlite3*)db
-                     withReadOnly: (BOOL)readOnly {
+-(NSDictionary*) executeSql: (NSString*)sql
+                withSqlArgs: (NSArray*)sqlArgs
+                     withDb: (sqlite3*)db
+               withReadOnly: (BOOL)readOnly {
     logDebug(@"executeSql sql: %@", sql);
     NSString *error = nil;
     sqlite3_stmt *statement;
@@ -139,13 +139,13 @@
         error = [SQLitePlugin convertSQLiteErrorToString:db];
         logDebug(@"prepare error!");
         logDebug(@"error: %@", error);
-        return @[error];
+        return @{@"error": error};
     }
 
     bool queryIsReadOnly = sqlite3_stmt_readonly(statement);
     if (readOnly && !queryIsReadOnly) {
         error = [NSString stringWithFormat:@"could not prepare %@", sql];
-        return @[error];
+        return @{@"error": error};
     }
 
     // bind any arguments
@@ -217,17 +217,14 @@
     sqlite3_finalize (statement);
 
     if (error) {
-        return @[error];
+        return @{@"error": error};
     }
 
-
-
-    return @[
-             [NSNull null],
-             [NSNumber numberWithLong:insertId],
-             [NSNumber numberWithInt:rowsAffected],
-             resultRows
-             ];
+    return @{
+             @"insertId": [NSNumber numberWithLong:insertId],
+             @"rowsAffected": [NSNumber numberWithInt:rowsAffected],
+             @"rows": resultRows
+             };
 }
 
 -(void)bindStatement:(sqlite3_stmt *)statement withArg:(NSObject *)arg atIndex:(int)argIndex {
