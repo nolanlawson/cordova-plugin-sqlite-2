@@ -18,26 +18,44 @@ function expectError(promise) {
 
 describe('basic test suite', function () {
 
-  it('throw error for openDatabase args < 1', function () {
+  it('throws error for openDatabase args < 1', function () {
     return expectError(Promise.resolve().then(function () {
       openDatabase();
     }));
   });
-  it('throw error for openDatabase args < 2', function () {
-    return expectError(Promise.resolve().then(function () {
+  it('does not throw error for openDatabase args < 2', function () {
+    if (typeof sqlitePlugin === 'undefined') {
+      return; // skip for websql
+    }
+    return Promise.resolve().then(function () {
       openDatabase(':memory:');
-    }));
+    });
   });
-  it('throw error for openDatabase args < 3', function () {
-    return expectError(Promise.resolve().then(function () {
-      openDatabase(':memory:', 'yolo');
-    }));
+  it('does not throw error for openDatabase args < 3', function () {
+    if (typeof sqlitePlugin === 'undefined') {
+      return; // skip for websql
+    }
+    return Promise.resolve().then(function () {
+      openDatabase(':memory:', '1.0');
+    });
   });
 
-  it('throw error for openDatabase args < 4', function () {
-    return expectError(Promise.resolve().then(function () {
-      openDatabase(':memory:', 'yolo', 'hey');
-    }));
+  it('does not throw error for openDatabase args < 4', function () {
+    if (typeof sqlitePlugin === 'undefined') {
+      return; // skip for websql
+    }
+    return Promise.resolve().then(function () {
+      openDatabase(':memory:', '1.0', 'hey');
+    });
+  });
+
+  it('does not throw error for {name:"foo"} arg', function () {
+    if (typeof sqlitePlugin === 'undefined') {
+      return; // skip for websql
+    }
+    return Promise.resolve().then(function () {
+      openDatabase({name: ':memory:'});
+    });
   });
 
   it('does a basic database operation', function () {

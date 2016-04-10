@@ -15,12 +15,17 @@ function openDatabase(name, version, description, size, callback) {
     version = name.version;
     name = name.name;
   }
-  if (typeof name === 'undefined' ||
-      typeof version === 'undefined' ||
-      typeof description === 'undefined' ||
-      typeof size === 'undefined') {
-    throw new Error(
-      'openDatabase() requires >=4 args: name, version, description, size');
+  if (!size) {
+    size = 1;
+  }
+  if (!description) {
+    description = name;
+  }
+  if (!version) {
+    version = '1.0';
+  }
+  if (typeof name === 'undefined') {
+    throw new Error('please be sure to call: openDatabase("myname.db")');
   }
   return openDB(name, version, description, size, callback);
 }

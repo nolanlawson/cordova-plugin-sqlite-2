@@ -37,7 +37,7 @@ db.transaction(function (txn) {
 ```
 
 Only the first argument to `openDatabase()` (the database name) is used.
-The other values are for backwards compatibility with WebSQL, and are required.
+The other values may be provided for backwards compatibility with WebSQL, but are ignored and not required.
 
 You can also pass in a single options object with the `name` key. This is for compatibility
 with the old SQLite Plugin, although it is non-standard with respect to WebSQL:
