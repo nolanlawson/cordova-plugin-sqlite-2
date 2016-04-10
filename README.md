@@ -73,6 +73,8 @@ This project is not designed to replicate 100% of the functionality of the old S
 
 If possible, you should prefer IndexedDB, e.g. via wrapper library like [Dexie](http://dexie.org/), [LocalForage](http://mozilla.github.io/localForage/), or [PouchDB](http://pouchdb.com/). This plugin should be thought of as a polyfill for less-capable platforms ([namely iOS](http://www.raymondcamden.com/2014/09/25/IndexedDB-on-iOS-8-Broken-Bad/)) while we wait for their browser implementations to catch up.
 
+For more thoughts on why this plugin exists, read [my introductory blog post](https://nolanlawson.com/2016/04/10/introducing-the-cordova-sqlite-plugin-2/).
+
 Supported platforms
 ---
 
