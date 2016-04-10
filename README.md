@@ -146,6 +146,10 @@ This will build the JS files and write them to `dist/`.
 Testing
 ----
 
+To run the eslint tests:
+
+    npm run lint
+
 To run the tests on any available Android device:
 
     npm run test-android

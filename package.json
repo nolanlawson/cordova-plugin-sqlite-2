@@ -5,6 +5,7 @@
   "scripts": {
     "build": "rimraf dist && mkdirp dist && browserify -t rollupify -s sqlitePlugin src/javascript/index.js > dist/sqlite-plugin.js",
     "build-test": "bash ./bin/build-test.sh",
+    "lint": "eslint src test/*js",
     "test": "npm run test-device",
     "test-local": "zuul --ui mocha-bdd --local 9000 --no-coverage test/test.js",
     "test-phantom": "npm run build && zuul --ui mocha-bdd --phantom --no-coverage test/test.js",
@@ -48,6 +49,7 @@
     "colors": "1.1.2",
     "cordova": "6.1.0",
     "denodeify": "1.2.1",
+    "eslint": "2.7.0",
     "lodash.find": "4.2.0",
     "lodash.map": "4.2.1",
     "lodash.zipobject": "4.1.2",
