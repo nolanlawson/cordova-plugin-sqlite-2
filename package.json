@@ -1,6 +1,6 @@
 {
-  "name": "cordova-sqlite-plugin-2",
-  "version": "1.0.1",
+  "name": "cordova-plugin-sqlite-2",
+  "version": "1.0.0",
   "description": "Cordova SQLite Plugin 2",
   "scripts": {
     "build": "rimraf dist && mkdirp dist && browserify -t rollupify -s sqlitePlugin src/javascript/index.js > dist/sqlite-plugin.js",
@@ -21,7 +21,7 @@
       "ios"
     ]
   },
-  "repository": "https://github.com/nolanlawson/sqlite-plugin-2.git",
+  "repository": "https://github.com/nolanlawson/cordova-plugin-sqlite-2.git",
   "keywords": [
     "cordova",
     "sqlite",
@@ -35,9 +35,9 @@
   "author": "Nolan Lawson <nolan@nolanlawson.com>",
   "license": "Apache-2.0",
   "bugs": {
-    "url": "https://github.com/nolanlawson/sqlite-plugin-2/issues"
+    "url": "https://github.com/nolanlawson/cordova-plugin-sqlite-2/issues"
   },
-  "homepage": "https://github.com/nolanlawson/sqlite-plugin-2#readme",
+  "homepage": "https://github.com/nolanlawson/cordova-plugin-sqlite-2#readme",
   "devDependencies": {
     "appium": "1.5.1",
     "bluebird": "3.3.4",

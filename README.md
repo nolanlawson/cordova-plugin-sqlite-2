@@ -1,13 +1,13 @@
-Cordova SQLite Plugin 2 [![Build Status](https://travis-ci.org/nolanlawson/sqlite-plugin-2.svg?branch=master)](https://travis-ci.org/nolanlawson/sqlite-plugin-2)
+Cordova SQLite Plugin 2 [![Build Status](https://travis-ci.org/nolanlawson/cordova-plugin-sqlite-2.svg?branch=master)](https://travis-ci.org/nolanlawson/cordova-plugin-sqlite-2)
 =====
 
 A rewrite/fork of the [Cordova SQLite Plugin](https://github.com/litehelpers/Cordova-sqlite-storage). In most cases, it should be a drop-in replacement.
 
-This plugin allows you to use a [WebSQL](http://www.w3.org/TR/webdatabase/)-compatible API to store data
-in your Cordova/PhoneGap/Ionic app, by proxying to a SQLite database on the native side. The main
+This plugin provides a [WebSQL](http://www.w3.org/TR/webdatabase/)-compatible API to store data
+in a Cordova/PhoneGap/Ionic app, by using a SQLite database on the native side. The main
 benefits are:
 
-1. unlimited storage
+1. unlimited and durable storage
 2. pre-populated databases
 3. support where WebSQL isn't available ([namely iOS WKWebView](https://bugs.webkit.org/show_bug.cgi?id=137760))
 
@@ -19,12 +19,12 @@ Install
 
 Use the [Cordova CLI](https://www.npmjs.com/package/cordova) to download from npm:
 
-    cordova plugin add cordova-sqlite-plugin-2
+    cordova plugin add cordova-plugin-sqlite-2
 
 Usage
 ----
 
-This plugin provides a global `window.sqlitePlugin` variable, with an `openDatabase` function
+This plugin creates a global `window.sqlitePlugin` object, with an `openDatabase` function
 that is exactly the same as WebSQL. Example usage:
 
 ```js
@@ -37,7 +37,7 @@ db.transaction(function (txn) {
 ```
 
 Only the first argument to `openDatabase()` (the database name) is used.
-The other values are for backwards compatibility with WebSQL.
+The other values are for backwards compatibility with WebSQL, and are required.
 
 You can also pass in a single options object with the `name` key. This is for compatibility
 with the old SQLite Plugin, although it is non-standard with respect to WebSQL:
@@ -52,24 +52,27 @@ Goals
 ---
 
 - **Minimal:** Just polyfills WebSQL via native SQLite.
-- **Well-tested:** Over 600 automated tests that [run in CI](https://travis-ci.org/nolanlawson/sqlite-plugin-2/builds) (many borrowed from the [PouchDB](http://pouchdb.com/) test suite).
+- **Well-tested:** Over 600 automated tests that [run in CI](https://travis-ci.org/nolanlawson/cordova-plugin-sqlite-2/builds) (many borrowed from the [PouchDB](http://pouchdb.com/) test suite).
 - **Lightweight:** Instead of bundling SQLite with the plugin, it uses the built-in Android and iOS APIs.
-- **Simple**: Uses [node-websql](https://github.com/nolanlawson/node-websql) to minimize native code. Transactional logic is mostly implemented in JavaScript.
+- **Simple**: Uses [node-websql](https://github.com/nolanlawson/node-websql) to maximize code re-use. Transactional logic is mostly implemented in JavaScript.
 
 Non-goals
 ----
 
-This project is not designed to provide 100% of the functionality of the old SQLite Plugin – deleting databases, closing databases, specifying a particular location, etc. The goal is just to provide a bridge to WebSQL, especially for environments where WebSQL is unavailable and IndexedDB is unfeasible (e.g. WKWebView on iOS).
+This project is not designed to replicate 100% of the functionality of the old SQLite Plugin – deleting databases, closing databases, specifying a particular location, etc. The goal is just to provide a bridge to WebSQL, especially for environments where WebSQL is unavailable and IndexedDB is unfeasible (e.g. WKWebView on iOS).
 
 If possible, you should prefer IndexedDB, e.g. via wrapper library like [Dexie](http://dexie.org/), [LocalForage](http://mozilla.github.io/localForage/), or [PouchDB](http://pouchdb.com/). This plugin should be thought of as a polyfill for less-capable platforms ([namely iOS](http://www.raymondcamden.com/2014/09/25/IndexedDB-on-iOS-8-Broken-Bad/)) while we wait for their browser implementations to catch up.
 
 Supported platforms
 ---
 
-- Android 4+ (including Crosswalk)
+- Android 4.0+ (including Crosswalk)
 - iOS 8+ (both UIWebView and WKWebView)
 
-It may work in iOS 6 and 7 as well, but I couldn't find a simulator to test. To see which platforms are tested in CI, see [the Travis builds](https://travis-ci.org/nolanlawson/sqlite-plugin-2/builds).
+To see which platforms are tested in CI, check out [the Travis builds](https://travis-ci.org/nolanlawson/cordova-plugin-sqlite-2/builds).
+Android <4.4 and Crosswalk are not tested in CI due to limitations of Chromedriver, but have been manually confirmed to work.
+
+For Windows Phone, you are recommended to use [cordova-plugin-websql](https://github.com/MSOpenTech/cordova-plugin-websql) instead.
 
 Android vs iOS
 ----
@@ -111,7 +114,7 @@ via:
 File dir = getContext().getFilesDir();
 ```
 
-On iOS, it's in the `NSLibraryDirectory` under `LocalDatabase/`, accessed natively via:
+On iOS, it's in the `NSLibraryDirectory` under `LocalDatabase/` (ala [the original SQLite Plugin](https://github.com/litehelpers/Cordova-sqlite-storage/issues/430)). It can be accessed natively via:
 
 ```objective-c
 NSString *dir = [
