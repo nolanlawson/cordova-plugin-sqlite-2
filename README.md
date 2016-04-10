@@ -152,6 +152,16 @@ E.g. if your file is called `foo.db`, then you open it with:
 var db = sqlitePlugin.openDatabase('foo.db', '1.0', '', 1);
 ```
 
+Migrating from the original SQLite Plugin
+------
+
+On iOS, the original SQLite Plugin does not use the standard `Library/NoCloud`, 
+but rather `Library/LocalDatabase` ([source](https://github.com/litehelpers/Cordova-sqlite-storage/issues/430)).
+So you will need to migrate if you are upgrading an existing app to the SQLite Plugin 2.
+
+To migrate, what you essentially need to do is copy the database file from `Library/LocalDatabase` to `Library/NoCloud`,
+using [the Cordova file plugin](https://github.com/apache/cordova-plugin-file).  Here is [some sample code](https://gist.github.com/nolanlawson/1b3ad1c4b327f49a0d59e6e94cff49b6) to get you started. You can also check out the [prepopulated database demo app](https://github.com/nolanlawson/cordova-prepopulated-database-demo), which performs a similar file copy operation.
+
 Building
 ---
 
