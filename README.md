@@ -30,7 +30,7 @@ that is exactly the same as WebSQL. Example usage:
 ```js
 var db = sqlitePlugin.openDatabase('mydb.db', '1.0', '', 1);
 db.transaction(function (txn) {
-  txn.executeSql('SELECT 42 AS `answer` FROM sqlite_master', [], function (tx, res) {
+  txn.executeSql('SELECT 42 AS `answer`', [], function (tx, res) {
     console.log(res.rows.item(0)); // {"answer": 42}
   });
 });
@@ -51,6 +51,10 @@ You can also create an in-memory SQLite database like so:
 ```js
 var db = sqlitePlugin.openDatabase(':memory:');
 ```
+
+Both `readTransaction()` (read-only) and `transaction()` (read-write) are supported.
+`readTransaction()` has some small performance optimizations, so it's worthwhile to
+use if you're not writing any data in a transaction.
 
 For a tutorial on how to use WebSQL, check out [the HTML5 Rocks article](http://www.html5rocks.com/en/tutorials/webdatabase/todo/) or [the HTML5 Doctor article](http://html5doctor.com/introducing-web-sql-databases/).
 
