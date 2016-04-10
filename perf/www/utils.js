@@ -34,7 +34,6 @@ exports.runTests = function (PouchDB, suiteName, testCases, opts) {
       var localDbName = 'perftestdb';
 
       t.test('setup', function (t) {
-        opts.size = 3000;
         if (levelAdapter) {
           opts.db = require(levelAdapter);
         }
