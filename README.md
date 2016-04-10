@@ -89,7 +89,7 @@ To skip using it on Android, just do:
 ```js
 document.addEventListener('deviceready', function () {
   if (/Android/i).test(navigator.userAgent)) {
-    window.sqlitePlugin = null;
+    delete window.sqlitePlugin;
   }
 }, false);
 ```
