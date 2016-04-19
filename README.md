@@ -17,9 +17,15 @@ Performance, browser support, and future prospects are all better in IndexedDB. 
 Install
 ----
 
-Use the [Cordova CLI](https://www.npmjs.com/package/cordova) to download from npm:
+For Ionic, use the [Ionic CLI](http://ionicframework.com/docs/cli/):
+
+    ionic plugin add cordova-plugin-sqlite-2
+
+Otherwise, use the [Cordova CLI](https://www.npmjs.com/package/cordova):
 
     cordova plugin add cordova-plugin-sqlite-2
+
+In both cases, the plugin will be downloaded [from npm](https://www.npmjs.com/package/cordova-plugin-sqlite-2).
 
 Usage
 ----
