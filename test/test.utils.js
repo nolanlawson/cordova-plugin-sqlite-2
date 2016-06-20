@@ -2,7 +2,7 @@
 /* jshint -W079 */
 'use strict';
 
-var PouchDB = require('pouchdb');
+var PouchDB = require('pouchdb-browser');
 var testUtils = {};
 
 function uniq(list) {
