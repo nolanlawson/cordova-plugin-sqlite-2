@@ -735,6 +735,270 @@ describe('dedicated db test suite - in-memory', function () {
     });
   });
 
+  it('issue #33 - mixed string/null', function () {
+    var sql = 'CREATE TABLE table1 (text1 string, text2 string)';
+    return transactionPromise(db, sql).then(function () {
+    }).then(function () {
+      return Promise.all([
+        transactionPromise(db,
+          'INSERT INTO table1 VALUES ("foo", "bar")'),
+        transactionPromise(db,
+          'INSERT INTO table1 VALUES (null, "baz")'),
+        transactionPromise(db,
+          'INSERT INTO table1 VALUES ("toto", null)'),
+        transactionPromise(db,
+          'INSERT INTO table1 VALUES ("buzz", "bozz")'),
+        transactionPromise(db,
+          'INSERT INTO table1 VALUES (null, null)')
+      ]);
+    }).then(function () {
+      var sql = 'SELECT * from table1';
+      return transactionPromise(db, sql);
+    }).then(function (res) {
+      assert.equal(res.rows.length, 5);
+      assert.deepEqual(res.rows.item(0), {
+        text1: "foo",
+        text2: "bar"
+      });
+      assert.deepEqual(res.rows.item(1), {
+        text1: null,
+        text2: "baz"
+      });
+      assert.deepEqual(res.rows.item(2), {
+        text1: "toto",
+        text2: null
+      });
+      assert.deepEqual(res.rows.item(3), {
+        text1: "buzz",
+        text2: "bozz"
+      });
+      assert.deepEqual(res.rows.item(4), {
+        text1: null,
+        text2: null
+      });
+    });
+  });
+
+  it('issue #33 - mixed string/null 2', function () {
+    var sql = 'CREATE TABLE table1 (text1 string, text2 string)';
+    return transactionPromise(db, sql).then(function () {
+    }).then(function () {
+      return Promise.all([
+        transactionPromise(db,
+          'INSERT INTO table1 VALUES (null, "baz")'),
+        transactionPromise(db,
+          'INSERT INTO table1 VALUES ("foo", "bar")'),
+        transactionPromise(db,
+          'INSERT INTO table1 VALUES ("toto", null)'),
+        transactionPromise(db,
+          'INSERT INTO table1 VALUES ("buzz", "bozz")'),
+        transactionPromise(db,
+          'INSERT INTO table1 VALUES (null, null)')
+      ]);
+    }).then(function () {
+      var sql = 'SELECT * from table1';
+      return transactionPromise(db, sql);
+    }).then(function (res) {
+      assert.equal(res.rows.length, 5);
+      assert.deepEqual(res.rows.item(0), {
+        text1: null,
+        text2: "baz"
+      });
+      assert.deepEqual(res.rows.item(1), {
+        text1: "foo",
+        text2: "bar"
+      });
+      assert.deepEqual(res.rows.item(2), {
+        text1: "toto",
+        text2: null
+      });
+      assert.deepEqual(res.rows.item(3), {
+        text1: "buzz",
+        text2: "bozz"
+      });
+      assert.deepEqual(res.rows.item(4), {
+        text1: null,
+        text2: null
+      });
+    });
+  });
+
+  it('issue #33 - mixed integer/null', function () {
+    var sql = 'CREATE TABLE table1 (text1 int, text2 int)';
+    return transactionPromise(db, sql).then(function () {
+    }).then(function () {
+      return Promise.all([
+        transactionPromise(db,
+          'INSERT INTO table1 VALUES (1, 2)'),
+        transactionPromise(db,
+          'INSERT INTO table1 VALUES (null, 3)'),
+        transactionPromise(db,
+          'INSERT INTO table1 VALUES (4, null)'),
+        transactionPromise(db,
+          'INSERT INTO table1 VALUES (5, 6)'),
+        transactionPromise(db,
+          'INSERT INTO table1 VALUES (null, null)')
+      ]);
+    }).then(function () {
+      var sql = 'SELECT * from table1';
+      return transactionPromise(db, sql);
+    }).then(function (res) {
+      assert.equal(res.rows.length, 5);
+      assert.deepEqual(res.rows.item(0), {
+        text1: 1,
+        text2: 2
+      });
+      assert.deepEqual(res.rows.item(1), {
+        text1: null,
+        text2: 3
+      });
+      assert.deepEqual(res.rows.item(2), {
+        text1: 4,
+        text2: null
+      });
+      assert.deepEqual(res.rows.item(3), {
+        text1: 5,
+        text2: 6
+      });
+      assert.deepEqual(res.rows.item(4), {
+        text1: null,
+        text2: null
+      });
+    });
+  });
+
+  it('issue #33 - mixed integer/null 2', function () {
+    var sql = 'CREATE TABLE table1 (text1 int, text2 int)';
+    return transactionPromise(db, sql).then(function () {
+    }).then(function () {
+      return Promise.all([
+        transactionPromise(db,
+          'INSERT INTO table1 VALUES (null, 3)'),
+        transactionPromise(db,
+          'INSERT INTO table1 VALUES (1, 2)'),
+        transactionPromise(db,
+          'INSERT INTO table1 VALUES (4, null)'),
+        transactionPromise(db,
+          'INSERT INTO table1 VALUES (5, 6)'),
+        transactionPromise(db,
+          'INSERT INTO table1 VALUES (null, null)')
+      ]);
+    }).then(function () {
+      var sql = 'SELECT * from table1';
+      return transactionPromise(db, sql);
+    }).then(function (res) {
+      assert.equal(res.rows.length, 5);
+      assert.deepEqual(res.rows.item(0), {
+        text1: null,
+        text2: 3
+      });
+      assert.deepEqual(res.rows.item(1), {
+        text1: 1,
+        text2: 2
+      });
+      assert.deepEqual(res.rows.item(2), {
+        text1: 4,
+        text2: null
+      });
+      assert.deepEqual(res.rows.item(3), {
+        text1: 5,
+        text2: 6
+      });
+      assert.deepEqual(res.rows.item(4), {
+        text1: null,
+        text2: null
+      });
+    });
+  });
+
+  it('issue #33 - mixed float/null', function () {
+    var sql = 'CREATE TABLE table1 (text1 float, text2 float)';
+    return transactionPromise(db, sql).then(function () {
+    }).then(function () {
+      return Promise.all([
+        transactionPromise(db,
+          'INSERT INTO table1 VALUES (1, 2)'),
+        transactionPromise(db,
+          'INSERT INTO table1 VALUES (null, 3)'),
+        transactionPromise(db,
+          'INSERT INTO table1 VALUES (4, null)'),
+        transactionPromise(db,
+          'INSERT INTO table1 VALUES (5, 6)'),
+        transactionPromise(db,
+          'INSERT INTO table1 VALUES (null, null)')
+      ]);
+    }).then(function () {
+      var sql = 'SELECT * from table1';
+      return transactionPromise(db, sql);
+    }).then(function (res) {
+      assert.equal(res.rows.length, 5);
+      assert.deepEqual(res.rows.item(0), {
+        text1: 1,
+        text2: 2
+      });
+      assert.deepEqual(res.rows.item(1), {
+        text1: null,
+        text2: 3
+      });
+      assert.deepEqual(res.rows.item(2), {
+        text1: 4,
+        text2: null
+      });
+      assert.deepEqual(res.rows.item(3), {
+        text1: 5,
+        text2: 6
+      });
+      assert.deepEqual(res.rows.item(4), {
+        text1: null,
+        text2: null
+      });
+    });
+  });
+
+  it('issue #33 - mixed blob/null', function () {
+    var sql = 'CREATE TABLE table1 (text1 blob, text2 blob)';
+    return transactionPromise(db, sql).then(function () {
+    }).then(function () {
+      return Promise.all([
+        transactionPromise(db,
+          'INSERT INTO table1 VALUES ("a", "b")'),
+        transactionPromise(db,
+          'INSERT INTO table1 VALUES (null, "c")'),
+        transactionPromise(db,
+          'INSERT INTO table1 VALUES ("d", null)'),
+        transactionPromise(db,
+          'INSERT INTO table1 VALUES ("e", "f")'),
+        transactionPromise(db,
+          'INSERT INTO table1 VALUES (null, null)')
+      ]);
+    }).then(function () {
+      var sql = 'SELECT * from table1';
+      return transactionPromise(db, sql);
+    }).then(function (res) {
+      assert.equal(res.rows.length, 5);
+      assert.deepEqual(res.rows.item(0), {
+        text1: 'a',
+        text2: 'b'
+      });
+      assert.deepEqual(res.rows.item(1), {
+        text1: null,
+        text2: 'c'
+      });
+      assert.deepEqual(res.rows.item(2), {
+        text1: 'd',
+        text2: null
+      });
+      assert.deepEqual(res.rows.item(3), {
+        text1: 'e',
+        text2: 'f'
+      });
+      assert.deepEqual(res.rows.item(4), {
+        text1: null,
+        text2: null
+      });
+    });
+  });
+
   it('valid read transaction', function () {
     var sql = 'CREATE TABLE table1 (text1 string, text2 string)';
     return transactionPromise(db, sql).then(function () {
