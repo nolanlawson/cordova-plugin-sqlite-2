@@ -1,7 +1,7 @@
 /* global sum */
 'use strict';
 
-var PouchDB = require('pouchdb');
+var PouchDB = require('pouchdb-browser');
 var should = require('chai').should();
 var testUtils = require('./test.utils.js');
 var adapters = ['local'];
