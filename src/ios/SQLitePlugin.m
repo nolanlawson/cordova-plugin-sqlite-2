@@ -173,7 +173,6 @@
     // iterate through sql results
     int columnCount;
     NSMutableArray *columnNames = [NSMutableArray arrayWithCapacity:0];
-    NSMutableArray *columnTypes = [NSMutableArray arrayWithCapacity:0];
     NSString *columnName;
     int columnType;
     BOOL fetchedColumns = NO;
@@ -186,20 +185,18 @@
         switch (result) {
             case SQLITE_ROW:
                 if (!fetchedColumns) {
-                    // get all column names and column types once as the beginning
+                    // get all column names once at the beginning
                     columnCount = sqlite3_column_count(statement);
 
                     for (i = 0; i < columnCount; i++) {
                         columnName = [NSString stringWithFormat:@"%s", sqlite3_column_name(statement, i)];
-                        columnType = sqlite3_column_type(statement, i);
                         [columnNames addObject:columnName];
-                        [columnTypes addObject:[NSNumber numberWithInteger:columnType]];
                     }
                     fetchedColumns = YES;
                 }
                 entry = [NSMutableArray arrayWithCapacity:columnCount];
                 for (i = 0; i < columnCount; i++) {
-                    columnType = [[columnTypes objectAtIndex:i] intValue];
+                    columnType = sqlite3_column_type(statement, i);
                     columnValue = [self getSqlValueForColumnType:columnType withStatement:statement withIndex: i];
                     [entry addObject:columnValue];
                 }

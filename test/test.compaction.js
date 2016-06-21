@@ -178,7 +178,7 @@ adapters.forEach(function (adapter) {
       ]
     ];
 
-    it('Compact more complicated tree', function (done) {
+    it.skip('Compact more complicated tree', function (done) {
       new PouchDB(dbs.name, function (err, db) {
         testUtils.putTree(db, exampleTree, function () {
           db.compact(function () {
@@ -190,7 +190,7 @@ adapters.forEach(function (adapter) {
       });
     });
 
-    it('Compact two times more complicated tree', function (done) {
+    it.skip('Compact two times more complicated tree', function (done) {
       var db = new PouchDB(dbs.name);
       testUtils.putTree(db, exampleTree, function () {
         db.compact(function () {
