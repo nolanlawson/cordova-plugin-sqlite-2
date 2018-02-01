@@ -14,6 +14,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.File;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -31,7 +32,7 @@ public class SQLitePlugin extends CordovaPlugin {
   private static final String[] EMPTY_COLUMNS = new String[]{};
   private static final SQLitePLuginResult EMPTY_RESULT = new SQLitePLuginResult(EMPTY_ROWS, EMPTY_COLUMNS, 0, 0, null);
 
-  private static final Map<String, SQLiteDatabase> DATABASES = new HashMap<String, SQLiteDatabase>();
+  private static final Map<String, Map<String, Object>> DATABASES = new HashMap<>();
 
   private final Handler backgroundHandler = createBackgroundHandler();
 
@@ -81,13 +82,13 @@ public class SQLitePlugin extends CordovaPlugin {
       String sql = sqlQuery.getString(0);
       String[] bindArgs = jsonArrayToStringArray(sqlQuery.getJSONArray(1));
       try {
-        if (isSelect(sql)) {
-          results[i] = doSelectInBackgroundAndPossiblyThrow(sql, bindArgs, db);
+        if (isRawQuery(sql)) {
+          results[i] = doRawQueryInBackgroundAndPossiblyThrow(sql, bindArgs, db);
         } else { // update/insert/delete
           if (readOnly) {
             results[i] = new SQLitePLuginResult(EMPTY_ROWS, EMPTY_COLUMNS, 0, 0, new ReadOnlyException());
           } else {
-            results[i] = doUpdateInBackgroundAndPossiblyThrow(sql, bindArgs, db);
+            results[i] = doCompileStatementInBackgroundAndPossiblyThrow(sql, bindArgs, db);
           }
         }
       } catch (Throwable e) {
@@ -100,9 +101,9 @@ public class SQLitePlugin extends CordovaPlugin {
     return results;
   }
 
-  // do a update/delete/insert operation
-  private SQLitePLuginResult doUpdateInBackgroundAndPossiblyThrow(String sql, String[] bindArgs,
-                                                                  SQLiteDatabase db) {
+  // do a compile statement (update/delete/insert) operation
+  private SQLitePLuginResult doCompileStatementInBackgroundAndPossiblyThrow(String sql, String[] bindArgs,
+                                                                            SQLiteDatabase db) {
     debug("\"run\" query: %s", sql);
     SQLiteStatement statement = null;
     try {
@@ -135,9 +136,9 @@ public class SQLitePlugin extends CordovaPlugin {
     }
   }
 
-  // do a select operation
-  private SQLitePLuginResult doSelectInBackgroundAndPossiblyThrow(String sql, String[] bindArgs,
-                                                                  SQLiteDatabase db) {
+  // do a raw query (select/pragma) operation
+  private SQLitePLuginResult doRawQueryInBackgroundAndPossiblyThrow(String sql, String[] bindArgs,
+                                                                    SQLiteDatabase db) {
     debug("\"all\" query: %s", sql);
     Cursor cursor = null;
     try {
@@ -172,9 +173,7 @@ public class SQLitePlugin extends CordovaPlugin {
       case Cursor.FIELD_TYPE_INTEGER:
         return cursor.getInt(index);
       case Cursor.FIELD_TYPE_BLOB:
-        // convert byte[] to binary string; it's good enough, because
-        // WebSQL doesn't support blobs anyway
-        return new String(cursor.getBlob(index));
+        return new String(cursor.getBlob(index), StandardCharsets.ISO_8859_1);
       case Cursor.FIELD_TYPE_STRING:
         return cursor.getString(index);
     }
@@ -182,17 +181,30 @@ public class SQLitePlugin extends CordovaPlugin {
   }
 
   private SQLiteDatabase getDatabase(String name) {
-    SQLiteDatabase database = DATABASES.get(name);
-    if (database == null) {
-      if (":memory:".equals(name)) {
-        database = SQLiteDatabase.openOrCreateDatabase(name, null);
-      } else {
-        File file = new File(cordova.getActivity().getFilesDir(), name);
-        database = SQLiteDatabase.openOrCreateDatabase(file, null);
+    Map<String, Object> cachedData = DATABASES.get(name);
+    SQLiteDatabase cachedDatabase = cachedData == null ? null : (SQLiteDatabase) cachedData.get("cache");
+    long cachedDate = cachedData == null ? 0 : (long) cachedData.get("date");
+    boolean isInMemory = ":memory:".equals(name);
+
+    File file = isInMemory ? null : new File(cordova.getActivity().getFilesDir(), name);
+    long date = isInMemory ? 0 : file.lastModified();
+
+    if (cachedDatabase == null || date != cachedDate) {
+      if (cachedDatabase != null) {
+        cachedDatabase.close();
       }
-      DATABASES.put(name, database);
+      if (isInMemory) {
+        cachedDatabase = SQLiteDatabase.openOrCreateDatabase(name, null);
+      } else {
+        cachedDatabase = SQLiteDatabase.openOrCreateDatabase(file, null);
+      }
+
+      cachedData = new HashMap<>();
+      cachedData.put("cache", cachedDatabase);
+      cachedData.put("date", date);
+      DATABASES.put(name, cachedData);
     }
-    return database;
+    return cachedDatabase;
   }
 
   private static void debug(String line, Object... format) {
@@ -223,10 +235,10 @@ public class SQLitePlugin extends CordovaPlugin {
       sb.append(JSONObject.quote(result.error.getMessage()));
     }
     sb.append(',')
-        .append(JSONObject.numberToString(result.insertId))
-        .append(',')
-        .append(JSONObject.numberToString(result.rowsAffected))
-        .append(',');
+            .append(JSONObject.numberToString(result.insertId))
+            .append(',')
+            .append(JSONObject.numberToString(result.rowsAffected))
+            .append(',');
 
     // column names
     sb.append('[');
@@ -267,8 +279,14 @@ public class SQLitePlugin extends CordovaPlugin {
     debug("returning json: %s", sb);
   }
 
+  private static boolean isRawQuery(String str) {
+    return isSelect(str) || isPragma(str);
+  }
   private static boolean isSelect(String str) {
     return startsWithCaseInsensitive(str, "select");
+  }
+  private static boolean isPragma(String str) {
+    return startsWithCaseInsensitive(str, "pragma");
   }
   private static boolean isInsert(String str) {
     return startsWithCaseInsensitive(str, "insert");

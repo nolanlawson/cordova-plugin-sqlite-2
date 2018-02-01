@@ -54,18 +54,32 @@
 
 -(NSValue*)openDatabase: (NSString*)dbName {
     logDebug(@"opening DB: %@", dbName);
-    NSValue *cachedDB = [cachedDatabases objectForKey:dbName];
-    if (cachedDB == nil) {
+    NSMutableDictionary *cachedData = [cachedDatabases objectForKey:dbName];
+    NSValue *cachedDB = [cachedData objectForKey:@"cache"];
+    NSDate *cachedDate = [cachedData objectForKey:@"date"];
+
+    NSString *fullDbPath = [self getPathForDB: dbName];
+    NSDictionary* fileAttribs = [[NSFileManager defaultManager] attributesOfItemAtPath:fullDbPath error:nil];
+    NSDate *date = [fileAttribs objectForKey:NSFileModificationDate];
+    NSComparisonResult result = [date compare:cachedDate];
+
+    if (cachedDB == nil || result != NSOrderedSame) {
+        sqlite3 *db;
+        if (cachedDB != nil) {
+            db = [cachedDB pointerValue];
+            sqlite3_close(db);
+        }
         logDebug(@"opening new db");
-        NSString *fullDbPath = [self getPathForDB: dbName];
         logDebug(@"full path: %@", fullDbPath);
         const char *sqliteName = [fullDbPath UTF8String];
-        sqlite3 *db;
         if (sqlite3_open(sqliteName, &db) != SQLITE_OK) {
             logDebug(@"cannot open database: %@", dbName); // shouldn't happen
         };
         cachedDB = [NSValue valueWithPointer:db];
-        [cachedDatabases setObject: cachedDB forKey: dbName];
+        cachedData = [NSMutableDictionary dictionaryWithCapacity:0];
+        [cachedData setObject: cachedDB forKey: @"cache"];
+        [cachedData setObject: date forKey: @"date"];
+        [cachedDatabases setObject: cachedData forKey: dbName];
     } else {
         logDebug(@"re-using existing db");
     }
@@ -120,6 +134,9 @@
         case SQLITE_FLOAT:
             return [NSNumber numberWithDouble: sqlite3_column_double(statement, i)];
         case SQLITE_BLOB:
+            return [[NSString alloc] initWithBytes:sqlite3_column_blob(statement, i)
+                                            length:sqlite3_column_bytes(statement, i)
+                                          encoding:NSASCIIStringEncoding];
         case SQLITE_TEXT:
             return [[NSString alloc] initWithBytes:(char *)sqlite3_column_text(statement, i)
                                             length:sqlite3_column_bytes(statement, i)
@@ -129,9 +146,9 @@
 }
 
 -(NSArray*) executeSql: (NSString*)sql
-                      withSqlArgs: (NSArray*)sqlArgs
-                           withDb: (sqlite3*)db
-                     withReadOnly: (BOOL)readOnly {
+           withSqlArgs: (NSArray*)sqlArgs
+                withDb: (sqlite3*)db
+          withReadOnly: (BOOL)readOnly {
     logDebug(@"executeSql sql: %@", sql);
     NSString *error = nil;
     sqlite3_stmt *statement;
@@ -251,13 +268,13 @@
         }
     } else { // NSString
         NSString *stringArg;
-        
+
         if ([arg isKindOfClass:[NSString class]]) {
             stringArg = (NSString *)arg;
         } else {
             stringArg = [arg description]; // convert to text
         }
-        
+
         NSData *data = [stringArg dataUsingEncoding:NSUTF8StringEncoding];
         sqlite3_bind_text(statement, argIndex, data.bytes, (int)data.length, SQLITE_TRANSIENT);
     }
@@ -266,12 +283,14 @@
 -(void)dealloc {
     int i;
     NSArray *keys = [cachedDatabases allKeys];
+    NSMutableDictionary *cachedData;
     NSValue *pointer;
     NSString *key;
     sqlite3 *db;
     for (i = 0; i < [keys count]; i++) {
         key = [keys objectAtIndex:i];
-        pointer = [cachedDatabases objectForKey:key];
+        cachedData = [cachedDatabases objectForKey:key];
+        pointer = [cachedData objectForKey:@"cache"];
         db = [pointer pointerValue];
         sqlite3_close (db);
     }
