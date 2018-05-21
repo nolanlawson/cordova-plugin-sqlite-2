@@ -1,15 +1,13 @@
+language: node_js
+node_js:
+  - "stable"
 os:
 - osx
 sudo: false
 script: npm run $COMMAND
 before_install:
-- brew update
 - ./bin/install-android-on-travis.sh
-- curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.31.0/install.sh | bash
-- source ~/.nvm/nvm.sh
-- nvm install stable
-- nvm use stable
-- npm install
+after_install:
 - SAUCE_CONNECT_DOWNLOAD_ON_INSTALL=true node node_modules/sauce-connect-launcher/scripts/install.js
 before_script:
   - npm run lint
