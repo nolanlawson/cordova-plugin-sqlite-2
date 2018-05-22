@@ -40,7 +40,7 @@
   },
   "homepage": "https://github.com/nolanlawson/cordova-plugin-sqlite-2#readme",
   "devDependencies": {
-    "appium": "1.5.1",
+    "appium": "1.8.0",
     "bluebird": "3.3.4",
     "browserify": "13.0.0",
     "bundle-collapser": "1.2.1",
