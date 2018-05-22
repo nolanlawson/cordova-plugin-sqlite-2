@@ -8,6 +8,7 @@ script: npm run $COMMAND
 before_install:
 - npm install -g npm@5
 - ./bin/install-android-on-travis.sh
+- brew install gradle
 after_install:
 - SAUCE_CONNECT_DOWNLOAD_ON_INSTALL=true node node_modules/sauce-connect-launcher/scripts/install.js
 before_script:
