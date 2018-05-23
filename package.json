@@ -5,7 +5,7 @@
   "scripts": {
     "build": "rimraf dist && mkdirp dist && browserify -t rollupify -s sqlitePlugin src/javascript/index.js > dist/sqlite-plugin.js",
     "build-test": "bash ./bin/build-test.sh",
-    "lint": "eslint src test/*js",
+    "lint": "eslint src test/*js bin/*js",
     "test": "npm run test-device",
     "test-local": "zuul --ui mocha-bdd --local 9000 --no-coverage test/test.js",
     "test-phantom": "npm run build && zuul --ui mocha-bdd --phantom --no-coverage test/test.js",
