@@ -496,6 +496,7 @@ describe('dedicated db test suite - in-memory', function () {
         txn.executeSql('DROP TABLE IF EXISTS table1');
         txn.executeSql('DROP TABLE IF EXISTS table2');
         txn.executeSql('DROP TABLE IF EXISTS table3');
+        txn.executeSql('DROP TABLE IF EXISTS table4');
       }, reject, resolve);
     }).then(function () {
       db = null;
@@ -1000,15 +1001,12 @@ describe('dedicated db test suite - in-memory', function () {
   });
 
   it('issue #43 - string/null', function () {
-      var sql = 'CREATE TABLE table1 (id int, text2 string, text3 string)';
-      return transactionPromise(db, sql).catch(function(err){
-          console.log(err);
-      }).then(function () {
-      }).then(function () {
+      var sql = 'CREATE TABLE table4 (id int, text2 string, text3 string)';
+      return transactionPromise(db, sql).then(function () {
          return transactionPromise(db,
-            'INSERT INTO table1 VALUES (1, "fun", null)');
+            'INSERT INTO table4 VALUES (1, "fun", null)');
       }).then(function () {
-        var sql = 'SELECT * from table1';
+        var sql = 'SELECT * from table4';
         return transactionPromise(db, sql);
       }).then(function (res) {
         assert.equal(res.rows.length, 1);
@@ -1017,11 +1015,11 @@ describe('dedicated db test suite - in-memory', function () {
           text2: "fun",
           text3: null
         });
-        var sql = 'UPDATE table1 SET text2 = null WHERE id = 1;';
+        var sql = 'UPDATE table4 SET text2 = null WHERE id = 1;';
         return transactionPromise(db, sql);
       }).then(function (res) {
           assert.equal(res.rowsAffected, 1, 'rowsAffected');
-          var sql = 'SELECT * from table1';
+          var sql = 'SELECT * from table4';
           return transactionPromise(db, sql);
       }).then(function (res) {
         assert.equal(res.rows.length, 1);
@@ -1033,10 +1031,40 @@ describe('dedicated db test suite - in-memory', function () {
       });
   });
 
+  it('issue #43 - string/empty', function () {
+    var sql = 'CREATE TABLE table4 (id int, text2 string, text3 string)';
+    return transactionPromise(db, sql).then(function () {
+      return transactionPromise(db,
+        'INSERT INTO table4 VALUES (1, "fun", "")');
+    }).then(function () {
+      var sql = 'SELECT * from table4';
+      return transactionPromise(db, sql);
+    }).then(function (res) {
+      assert.equal(res.rows.length, 1);
+      assert.deepEqual(res.rows.item(0), {
+        id: 1,
+        text2: "fun",
+        text3: ""
+      });
+      var sql = 'UPDATE table4 SET text2 = "" WHERE id = 1;';
+      return transactionPromise(db, sql);
+    }).then(function (res) {
+      assert.equal(res.rowsAffected, 1, 'rowsAffected');
+      var sql = 'SELECT * from table4';
+      return transactionPromise(db, sql);
+    }).then(function (res) {
+      assert.equal(res.rows.length, 1);
+      assert.deepEqual(res.rows.item(0), {
+        id: 1,
+        text2: "",
+        text3: ""
+      });
+    });
+  });
+
   it('valid read transaction', function () {
     var sql = 'CREATE TABLE table1 (text1 string, text2 string)';
     return transactionPromise(db, sql).then(function () {
-    }).then(function () {
       var sql = 'INSERT INTO table1 VALUES ("toto", "haha")';
       return transactionPromise(db, sql);
     }).then(function () {
@@ -1056,7 +1084,6 @@ describe('dedicated db test suite - in-memory', function () {
   it('throws error for writes during read-only transaction', function () {
     var sql = 'CREATE TABLE table1 (text1 string, text2 string)';
     return transactionPromise(db, sql).then(function () {
-    }).then(function () {
       var sql = 'INSERT INTO table1 VALUES ("toto", "haha")';
       return transactionPromise(db, sql);
     }).then(function () {
@@ -1068,7 +1095,6 @@ describe('dedicated db test suite - in-memory', function () {
   it('query ignored for invalid read-only transaction write', function () {
     var sql = 'CREATE TABLE table1 (text1 string, text2 string)';
     return transactionPromise(db, sql).then(function () {
-    }).then(function () {
       var sql = 'INSERT INTO table1 VALUES ("toto", "haha")';
       return transactionPromise(db, sql);
     }).then(function () {

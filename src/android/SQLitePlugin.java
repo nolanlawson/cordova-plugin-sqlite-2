@@ -109,7 +109,7 @@ public class SQLitePlugin extends CordovaPlugin {
       statement = db.compileStatement(sql);
       debug("compiled statement");
       if (bindArgs != null) {
-         bindAllArguments(statement, bindArgs);
+        bindAllArguments(statement, bindArgs);
       }
       debug("bound args");
       if (isInsert(sql)) {
@@ -309,7 +309,7 @@ public class SQLitePlugin extends CordovaPlugin {
     int len = jsonArray.length();
     String[] res = new String[len];
     for (int i = 0; i < len; i++) {
-      res[i] = !jsonArray.isNull(i) ? jsonArray.getString(i) : "";
+      res[i] = jsonArray.getString(i);
     }
     return res;
   }
@@ -337,13 +337,13 @@ public class SQLitePlugin extends CordovaPlugin {
     }
   }
 
-  private  static void  bindAllArguments(SQLiteStatement statement, String[] bindArgs) {
-     for (int i = bindArgs.length; i != 0; i--) {
-       if(bindArgs[i-1].isEmpty()) {
-         statement.bindNull(i);
-       } else {
-         statement.bindString(i, bindArgs[i - 1]);
-       }
-     }
- }
+  private static void bindAllArguments(SQLiteStatement statement, String[] bindArgs) {
+    for (int i = 0; i < bindArgs.length; i++) {
+      if (bindArgs[i] == null) {
+        statement.bindNull(i + 1);
+      } else {
+        statement.bindString(i + 1, bindArgs[i]);
+      }
+    }
+  }
 }
