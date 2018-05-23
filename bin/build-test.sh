@@ -28,11 +28,9 @@ if [[ $CLEAN == '1' ]]; then
   bash -c "$CORDOVA platform rm android >/dev/null 2>/dev/null; exit 0"
   bash -c "$CORDOVA platform rm ios >/dev/null 2>/dev/null; exit 0"
   if [[ $PLATFORM == 'ios' ]]; then
+    $CORDOVA platform add ios
     if [[ $WKWEBVIEW == '1' ]]; then
-      $CORDOVA platform add ios@4.0.0
       $CORDOVA plugin add cordova-plugin-wkwebview-engine
-    else
-      $CORDOVA platform add ios
     fi
   else
     if [[ $CROSSWALK == '1' ]]; then

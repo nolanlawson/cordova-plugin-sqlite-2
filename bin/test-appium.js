@@ -9,7 +9,6 @@ var find = require('lodash.find');
 var sauceConnectLauncher = require('sauce-connect-launcher');
 var reporter = require('./test-reporter');
 var request = require('request-promise');
-var denodeify = require('denodeify');
 var fs = require('fs');
 var stream2promise = require('stream-to-promise');
 var uuid = require('uuid');
@@ -50,10 +49,7 @@ function configureAndroid() {
   if (process.env.TRAVIS) {
     desired.platformVersion = process.env.PLATFORM_VERSION;
     // via https://wiki.saucelabs.com/display/DOCS/Platform+Configurator
-    desired.browserName = '';
-    desired.appiumVersion = '1.5.1';
     desired.deviceName = 'Android Emulator';
-    desired.deviceType = 'phone';
     desired.deviceOrientation = 'portrait';
   }
 }
@@ -63,15 +59,12 @@ function configureIos() {
   desired = {
     platformName: 'iOS',
     deviceName: 'iPhone Simulator',
-    platformVersion: '9.1',
     name: 'SQLitePlugin2-' + tunnelId,
     app: app
   };
   if (process.env.TRAVIS) {
     desired.platformVersion = process.env.PLATFORM_VERSION;
     // via https://wiki.saucelabs.com/display/DOCS/Platform+Configurator
-    desired.browserName = '';
-    desired.appiumVersion = '1.5.1';
     desired.deviceName = 'iPhone Simulator';
     desired.deviceOrientation = 'portrait';
   }
@@ -96,7 +89,9 @@ function wait(ms) {
 }
 
 function runTest() {
-  return browser.setImplicitWaitTimeout(IMPLICIT_WAIT_TIMEOUT).then(function () {
+  return browser.then(function () {
+    return browser.setImplicitWaitTimeout(IMPLICIT_WAIT_TIMEOUT);
+  }).then(function () {
     return wait(RETRY_TIMEOUT);
   }).then(function () {
     return browser.contexts();
@@ -230,8 +225,10 @@ Promise.resolve().then(function () {
     process.exit(0);
   });
 }).catch(function (err) {
+  console.error(err);
   return cleanup().then(function () {
-    console.log(err.stack);
+    process.exit(1);
+  }, function () {
     process.exit(1);
   });
 });
