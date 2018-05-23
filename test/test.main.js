@@ -999,6 +999,40 @@ describe('dedicated db test suite - in-memory', function () {
     });
   });
 
+  it('issue #43 - string/null', function () {
+      var sql = 'CREATE TABLE table1 (id int, text2 string, text3 string)';
+      return transactionPromise(db, sql).catch(function(err){
+          console.log(err);
+      }).then(function () {
+      }).then(function () {
+         return transactionPromise(db,
+            'INSERT INTO table1 VALUES (1, "fun", null)');
+      }).then(function () {
+        var sql = 'SELECT * from table1';
+        return transactionPromise(db, sql);
+      }).then(function (res) {
+        assert.equal(res.rows.length, 1);
+        assert.deepEqual(res.rows.item(0), {
+          id: 1,
+          text2: "fun",
+          text3: null
+        });
+        var sql = 'UPDATE table1 SET text2 = null WHERE id = 1;';
+        return transactionPromise(db, sql);
+      }).then(function (res) {
+          assert.equal(res.rowsAffected, 1, 'rowsAffected');
+          var sql = 'SELECT * from table1';
+          return transactionPromise(db, sql);
+      }).then(function (res) {
+        assert.equal(res.rows.length, 1);
+        assert.deepEqual(res.rows.item(0), {
+          id: 1,
+          text2: null,
+          text3: null
+        });
+      });
+  });
+
   it('valid read transaction', function () {
     var sql = 'CREATE TABLE table1 (text1 string, text2 string)';
     return transactionPromise(db, sql).then(function () {
