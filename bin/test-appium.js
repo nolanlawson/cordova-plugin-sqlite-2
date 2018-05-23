@@ -51,7 +51,6 @@ function configureAndroid() {
     // via https://wiki.saucelabs.com/display/DOCS/Platform+Configurator
     desired.deviceName = 'Android Emulator';
     desired.deviceOrientation = 'portrait';
-    desired.platformName = 'Android';
   }
 }
 
@@ -60,14 +59,12 @@ function configureIos() {
   desired = {
     platformName: 'iOS',
     deviceName: 'iPhone Simulator',
-    platformVersion: '9.1',
     name: 'SQLitePlugin2-' + tunnelId,
     app: app
   };
   if (process.env.TRAVIS) {
     desired.platformVersion = process.env.PLATFORM_VERSION;
     // via https://wiki.saucelabs.com/display/DOCS/Platform+Configurator
-    desired.appiumVersion = '1.5.1';
     desired.deviceName = 'iPhone Simulator';
     desired.deviceOrientation = 'portrait';
   }

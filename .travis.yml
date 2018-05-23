@@ -17,8 +17,8 @@ env:
   - COMMAND=test-phantom
   - PLATFORM_VERSION=4.4 PLATFORM=android COMMAND=test
   - PLATFORM_VERSION=5.1 PLATFORM=android COMMAND=test
-  - PLATFORM_VERSION=8.0 PLATFORM=ios COMMAND=test
-  - PLATFORM_VERSION=9.2 PLATFORM=ios WKWEBVIEW=1 COMMAND=test
+  - PLATFORM_VERSION=9.3 PLATFORM=ios COMMAND=test
+  - PLATFORM_VERSION=10.3 PLATFORM=ios WKWEBVIEW=1 COMMAND=test
   global:
   - ANDROID_HOME="/usr/local/share/android-sdk"
   - ANDROID_SDK_ROOT="/usr/local/share/android-sdk"
