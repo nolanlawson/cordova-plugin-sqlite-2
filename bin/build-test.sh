@@ -59,9 +59,9 @@ $REPLACE '/__zuul' '.' www/zuul-client.js
 kill $ZUUL_PID
 
 if [[ $RUN == '1' ]]; then
-  $CORDOVA --verbose run $PLATFORM
+  $CORDOVA run $PLATFORM
 else
-  $CORDOVA --verbose build $PLATFORM
+  $CORDOVA build $PLATFORM
 fi
 
 if [[ $PLATFORM == 'ios' ]]; then
