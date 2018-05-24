@@ -1,6 +1,5 @@
-import map from 'lodash.map';
+import { map, zipObject } from './utils';
 import SQLiteResult from './SQLiteResult';
-import zipObject from 'lodash.zipObject';
 
 function massageError(err) {
   return typeof err === 'string' ? new Error(err) : err;
