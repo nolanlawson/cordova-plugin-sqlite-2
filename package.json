@@ -1,6 +1,6 @@
 {
   "name": "cordova-plugin-sqlite-2",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Cordova SQLite Plugin 2",
   "scripts": {
     "build": "rimraf dist && mkdirp dist && rollup -c",
