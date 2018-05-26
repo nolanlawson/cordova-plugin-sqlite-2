@@ -9,7 +9,7 @@ benefits are:
 
 1. unlimited and durable storage
 2. prepopulated databases
-3. support where WebSQL isn't available ([namely iOS WKWebView](https://bugs.webkit.org/show_bug.cgi?id=137760))
+3. support where WebSQL isn't available ([namely old versions of iOS WKWebView](https://bugs.webkit.org/show_bug.cgi?id=137760))
 
 **Note:** if you can avoid using this plugin in favor of [IndexedDB](http://w3c.github.io/IndexedDB/) (or regular WebSQL), then you should.
 Performance, browser support, and future prospects are all better in IndexedDB. Please see [goals](#goals) and [non-goals](#non-goals) for more explanation.
@@ -117,7 +117,7 @@ can use IndexedDB/WebSQL instead.
 
 #### iOS
 
-On iOS, this plugin is quite a bit slower than native WebSQL, due to the overhead of serializing data sent between the WebView and the native layer. However, sometimes native WebSQL isn't an option: e.g. you are using WKWebView (where [WebSQL is not supported](https://bugs.webkit.org/show_bug.cgi?id=137760)), or you need to store more than [the maximum allowed by Apple in regular WebSQL](https://pouchdb.com/errors.html#not_enough_space). In those cases, this plugin can be very handy.
+On iOS, this plugin is quite a bit slower than native WebSQL, due to the overhead of serializing data sent between the WebView and the native layer. However, sometimes native WebSQL isn't an option: e.g. you are using WKWebView on an old version of iOS (where [WebSQL is not supported](https://bugs.webkit.org/show_bug.cgi?id=137760)), or you need to store more than [the maximum allowed by Apple in regular WebSQL](https://pouchdb.com/errors.html#not_enough_space). In those cases, this plugin can be very handy.
 
 On both iOS and Android, this plugin can also be considered useful if you need huge
 amounts of storage, or prepopulated databases.
