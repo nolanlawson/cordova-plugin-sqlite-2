@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <plugin xmlns="http://apache.org/cordova/ns/plugins/1.0"
-        id="cordova-plugin-sqlite-2" version="1.0.4">
+        id="cordova-plugin-sqlite-2" version="1.0.6">
     <name>SQLitePlugin</name>
     <description>Cordova SQLite Plugin 2</description>
     <license>Apache 2.0</license>
