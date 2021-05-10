@@ -309,7 +309,7 @@ public class SQLitePlugin extends CordovaPlugin {
     int len = jsonArray.length();
     String[] res = new String[len];
     for (int i = 0; i < len; i++) {
-      res[i] = jsonArray.getString(i);
+      res[i] = !jsonArray.isNull(i) ? jsonArray.getString(i) : null;
     }
     return res;
   }
