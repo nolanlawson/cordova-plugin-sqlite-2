@@ -1062,6 +1062,26 @@ describe('dedicated db test suite - in-memory', function () {
     });
   });
 
+  it('issue #43 - nulls and strings in arrays', function () {
+    var create = 'CREATE TABLE table1 (text1 string, text2 string)';
+    var insert = 'INSERT INTO table1 VALUES ("1337", "1337")';
+    var update = 'UPDATE table1 SET text1=? WHERE text2=?';
+    var select = 'SELECT * from table1;';
+    return transactionPromise(db, create).then(function () {
+      return transactionPromise(db, insert);
+    }).then(function () {
+      return transactionPromise(db, update, [null, 1337]);
+    }).then(function () {
+      return transactionPromise(db, select);
+    }).then(function (res) {
+      assert.equal(res.rows.length, 1, 'rows.length');
+      assert.deepEqual(res.rows.item(0), {
+        text1: null,
+        text2: '1337'
+      });
+    });
+  });
+
   it('valid read transaction', function () {
     var sql = 'CREATE TABLE table1 (text1 string, text2 string)';
     return transactionPromise(db, sql).then(function () {
